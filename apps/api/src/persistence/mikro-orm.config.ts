@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver, UnderscoreNamingStrategy } from '@mikro-orm/postgresql';
 
@@ -9,6 +11,9 @@ import {
   TransactionEntity,
 } from '../modules/checkout/infrastructure/persistence/checkout.entities';
 import type { MikroOrmSettings } from './orm-settings';
+
+/** Migration folder, sibling of this module in both `src` and `dist`. */
+const MIGRATIONS_DIR = join(__dirname, 'migrations');
 
 /** Every persistence entity, registered explicitly rather than by directory glob. */
 export const ENTITIES = [
@@ -39,8 +44,13 @@ export function buildMikroOrmConfig(settings: MikroOrmSettings) {
     namingStrategy: UnderscoreNamingStrategy,
     extensions: [Migrator],
     migrations: {
-      path: './dist/persistence/migrations',
-      pathTs: './src/persistence/migrations',
+      // Resolved from this module's own location, not from the working directory.
+      // Relative paths made the migrator silently find nothing whenever the process
+      // was started from elsewhere — and "no migrations" looks exactly like success.
+      // The folder sits next to this file in both the sources and the build output,
+      // so one absolute path is correct for either.
+      path: MIGRATIONS_DIR,
+      pathTs: MIGRATIONS_DIR,
       // Schema changes are reviewed as code, never applied implicitly at boot.
       disableForeignKeys: false,
       snapshot: false,
