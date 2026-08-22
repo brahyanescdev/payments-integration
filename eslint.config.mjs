@@ -200,6 +200,13 @@ export default tseslint.config(
     rules: { 'no-console': 'off' },
   },
 
+  // Plain CommonJS by necessity: must execute via `require()` calls in exact
+  // written order, which ES `import` syntax does not guarantee (see the file).
+  {
+    files: ['**/jest.polyfills.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+
   // Tests describe scenarios; length and console noise limits get in the way there.
   {
     files: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', 'e2e/**/*.ts'],

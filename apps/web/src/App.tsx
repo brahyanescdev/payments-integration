@@ -1,14 +1,9 @@
 import { TEST_IDS } from '@payments/shared';
 
+import { ProductsPage } from './pages/ProductsPage';
 import { t } from './i18n/es';
 
-/**
- * Application shell.
- *
- * Holds the layout frame that every screen of the checkout flow renders into.
- * Routing and state arrive with the first vertical slice; keeping the shell empty
- * until then avoids wiring a store that has nothing to hold.
- */
+/** Application shell: the frame every screen of the checkout flow renders into. */
 export function App() {
   return (
     <div
@@ -19,7 +14,9 @@ export function App() {
         <h1 className="text-2xl font-semibold tracking-tight">{t.app.title}</h1>
         <p className="text-sm text-neutral-600">{t.app.tagline}</p>
       </header>
-      <main className="flex flex-1 flex-col" />
+      <main className="flex flex-1 flex-col pt-4">
+        <ProductsPage />
+      </main>
     </div>
   );
 }
