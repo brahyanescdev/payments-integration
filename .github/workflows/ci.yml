@@ -1,0 +1,143 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Node 25 no longer ships Corepack, so pnpm is installed explicitly by the action.
+  NODE_VERSION: '22'
+  PNPM_VERSION: '11.22.0'
+
+jobs:
+  api:
+    name: api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests with coverage gate
+        run: pnpm --filter @payments/shared test:cov && pnpm --filter @payments/api test:cov
+
+      # Publishes a per-file coverage table on the pull request and fails when the
+      # threshold is missed, so the number is visible instead of buried in logs.
+      - name: Report coverage
+        if: github.event_name == 'pull_request'
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          package-manager: pnpm
+          working-directory: apps/api
+          skip-step: all
+          coverage-file: ./coverage/coverage-summary.json
+          base-coverage-file: ./coverage/coverage-summary.json
+          annotations: none
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests with coverage gate
+        run: pnpm --filter @payments/web test:cov
+
+      - name: Production build
+        run: pnpm --filter @payments/web build
+        env:
+          VITE_API_BASE_URL: http://localhost:3000/api/v1
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: payments
+          POSTGRES_PASSWORD: payments
+          POSTGRES_DB: payments
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U payments -d payments"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm --filter @payments/e2e exec playwright install --with-deps chromium
+
+      - name: Build deployable artefacts
+        run: pnpm build
+        env:
+          VITE_API_BASE_URL: http://localhost:3000/api/v1
+
+      # The fake gateway keeps runs deterministic: the shared sandbox account can be
+      # signed out from elsewhere, which would fail the pipeline for reasons that
+      # have nothing to do with the change under review.
+      - name: End-to-end suite
+        run: pnpm e2e
+        env:
+          E2E_GATEWAY_DRIVER: fake
+          E2E_DATABASE_URL: postgresql://payments:payments@localhost:5432/payments
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 30
