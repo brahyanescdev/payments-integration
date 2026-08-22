@@ -131,11 +131,13 @@ function readManifest(evidenceDir: string): EvidenceEntry[] {
     );
   }
 
+  // Playwright runs each project in its own module instance, so the in-process
+  // counter restarts per project. Renumbering by append order gives the index a
+  // single, continuous sequence.
   const entries = readFileSync(manifestPath, 'utf8')
     .split('\n')
     .filter(Boolean)
-    .map((line) => JSON.parse(line) as EvidenceEntry)
-    .sort((a, b) => a.order - b.order);
+    .map((line, index) => ({ ...(JSON.parse(line) as EvidenceEntry), order: index + 1 }));
 
   rmSync(manifestPath);
 
