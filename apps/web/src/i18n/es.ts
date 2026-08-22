@@ -14,4 +14,10 @@ export const t = {
     retry: 'Reintentar',
     unexpectedError: 'Algo salió mal. Vuelve a intentarlo en un momento.',
   },
+  catalog: {
+    title: 'Catálogo',
+    empty: 'Todavía no hay productos disponibles.',
+    outOfStock: 'Agotado',
+    unitsAvailable: 'unidades disponibles',
+  },
 } as const;

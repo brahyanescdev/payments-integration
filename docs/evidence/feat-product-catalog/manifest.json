@@ -1,0 +1,42 @@
+[
+  {
+    "order": 1,
+    "label": "Catalogo de productos",
+    "file": "01-mobile-catalogo-de-productos.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "muestra el catálogo con precio, stock e imagen"
+  },
+  {
+    "order": 2,
+    "label": "Shell de la aplicacion",
+    "file": "02-mobile-shell-de-la-aplicacion.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "the SPA boots and renders its shell"
+  },
+  {
+    "order": 3,
+    "label": "Swagger UI con la API en linea",
+    "file": "01-desktop-swagger-ui-con-la-api-en-linea.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "serves the OpenAPI explorer"
+  },
+  {
+    "order": 4,
+    "label": "Catalogo de productos",
+    "file": "02-desktop-catalogo-de-productos.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "muestra el catálogo con precio, stock e imagen"
+  },
+  {
+    "order": 5,
+    "label": "Shell de la aplicacion",
+    "file": "03-desktop-shell-de-la-aplicacion.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "the SPA boots and renders its shell"
+  }
+]
