@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
+import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { Page, TestInfo } from '@playwright/test';
@@ -67,6 +67,3 @@ export async function captureEvidence(
 
   appendFileSync(join(evidenceDir, 'manifest.jsonl'), `${JSON.stringify(entry)}\n`, 'utf8');
 }
-
-/** True when the current run is producing evidence rather than only asserting. */
-export const isEvidenceRun = (): boolean => Boolean(evidenceDir) && existsSync(evidenceDir);

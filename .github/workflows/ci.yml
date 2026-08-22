@@ -9,6 +9,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Read-only by default; the coverage bot needs to write its comment on the PR.
+permissions:
+  contents: read
+  pull-requests: write
+
 env:
   # Node 25 no longer ships Corepack, so pnpm is installed explicitly by the action.
   NODE_VERSION: '22'
@@ -42,8 +47,9 @@ jobs:
       - name: Unit tests with coverage gate
         run: pnpm --filter @payments/shared test:cov && pnpm --filter @payments/api test:cov
 
-      # Publishes a per-file coverage table on the pull request and fails when the
-      # threshold is missed, so the number is visible instead of buried in logs.
+      # Publishes a per-file coverage table on the pull request, so the number is
+      # visible in review instead of buried in the job log. The hard gate is the
+      # threshold inside jest.config.js, which already failed the step above.
       - name: Report coverage
         if: github.event_name == 'pull_request'
         uses: ArtiomTr/jest-coverage-report-action@v2
@@ -53,7 +59,6 @@ jobs:
           working-directory: apps/api
           skip-step: all
           coverage-file: ./coverage/coverage-summary.json
-          base-coverage-file: ./coverage/coverage-summary.json
           annotations: none
 
   web:
@@ -79,6 +84,17 @@ jobs:
 
       - name: Unit tests with coverage gate
         run: pnpm --filter @payments/web test:cov
+
+      - name: Report coverage
+        if: github.event_name == 'pull_request'
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          package-manager: pnpm
+          working-directory: apps/web
+          skip-step: all
+          coverage-file: ./coverage/coverage-summary.json
+          annotations: none
 
       - name: Production build
         run: pnpm --filter @payments/web build
