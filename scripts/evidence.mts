@@ -1,21 +1,16 @@
 /**
- * Produces the visual evidence that accompanies every pull request.
- *
- * Run before opening a PR:
+ * Captures the visual evidence that accompanies every pull request.
  *
  * ```bash
  * pnpm evidence
  * ```
  *
- * It builds the deployable artefacts, drives them with Playwright, collects the
- * screenshots the specs captured, writes an index next to them, and emits a ready
- * pull-request body.
+ * Builds the deployable artefacts, drives them with Playwright, and writes the
+ * screenshots plus an index into `docs/evidence/<branch>/`.
  *
- * The body links images by absolute `raw.githubusercontent.com` URL on purpose:
- * GitHub does not render repository-relative image paths inside a pull-request
- * description, only inside committed Markdown files. That is also why the captures
- * must be committed and pushed on the feature branch *before* the PR is created —
- * the URL has to resolve when GitHub fetches it.
+ * The pull-request description is *not* produced here: it links every image by
+ * commit SHA, and that SHA does not exist until the captures are committed and
+ * pushed. Run `pnpm pr:body` after the push.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -47,22 +42,6 @@ const capture = (command: string, args: string[]): string =>
 /** Slug used for the evidence folder; matches the branch so PRs never collide. */
 const branchSlug = (branch: string): string => branch.replace(/[^a-zA-Z0-9._-]+/g, '-');
 
-/**
- * Derives `owner/repo` from the origin remote, covering both SSH and HTTPS forms.
- * @throws Error when the remote is missing or unrecognised, since a PR body with
- *   broken image links is worse than no PR body at all.
- */
-const originSlug = (): string => {
-  const remote = capture('git', ['remote', 'get-url', 'origin']);
-  const match = remote.match(/github\.com[:/](?<owner>[^/]+)\/(?<repo>[^/.]+)(?:\.git)?$/);
-
-  if (!match?.groups) {
-    throw new Error(`Cannot derive the GitHub repository from origin remote "${remote}".`);
-  }
-
-  return `${match.groups.owner}/${match.groups.repo}`;
-};
-
 /** Writes the browsable index that lives beside the captures in the repository. */
 function writeEvidenceIndex(evidenceDir: string, branch: string, entries: EvidenceEntry[]): void {
   const rows = entries
@@ -90,38 +69,7 @@ function writeEvidenceIndex(evidenceDir: string, branch: string, entries: Eviden
   );
 }
 
-/** Emits the pull-request description, with images linked by absolute raw URL. */
-function writePrBody(branch: string, slug: string, entries: EvidenceEntry[]): string {
-  const rawBase = `https://raw.githubusercontent.com/${originSlug()}/${branch}/docs/evidence/${slug}`;
-
-  const body = [
-    '## Qué cambia',
-    '',
-    '<!-- Alcance de la rebanada: endpoint, pantalla y regla de negocio. -->',
-    '',
-    '## Evidencia de los casos de prueba',
-    '',
-    ...entries.map(
-      (entry) =>
-        `### ${entry.label} — ${entry.viewport}\n\n![${entry.label}](${rawBase}/${entry.file})\n`,
-    ),
-    '## Checklist',
-    '',
-    '- [ ] Tests unitarios (Jest) añadidos junto al código de este PR',
-    '- [ ] Cobertura ≥ 80% en los workspaces tocados',
-    '- [x] Capturas de los casos de prueba adjuntas',
-    '- [ ] OpenAPI / README actualizados si el contrato cambió',
-    '- [ ] Sin secretos ni valores quemados en el diff',
-    '',
-  ].join('\n');
-
-  const path = join(repoRoot, '.github', 'pr-body.md');
-  writeFileSync(path, body, 'utf8');
-
-  return path;
-}
-
-/** Reads and clears the JSONL manifest the specs appended to during the run. */
+/** Reads the JSONL the specs appended to, and rewrites it as an ordered manifest. */
 function readManifest(evidenceDir: string): EvidenceEntry[] {
   const manifestPath = join(evidenceDir, 'manifest.jsonl');
 
@@ -140,6 +88,10 @@ function readManifest(evidenceDir: string): EvidenceEntry[] {
     .map((line, index) => ({ ...(JSON.parse(line) as EvidenceEntry), order: index + 1 }));
 
   rmSync(manifestPath);
+
+  // Kept beside the captures: `pnpm pr:body` reads it to build the description, and
+  // it documents what each image proves for anyone browsing the folder later.
+  writeFileSync(join(evidenceDir, 'manifest.json'), `${JSON.stringify(entries, null, 2)}\n`, 'utf8');
 
   return entries;
 }
@@ -167,15 +119,15 @@ function main(): void {
   const entries = readManifest(evidenceDir);
 
   writeEvidenceIndex(evidenceDir, branch, entries);
-  const prBodyPath = writePrBody(branch, slug, entries);
 
   console.warn(`\n${entries.length} capturas en docs/evidence/${slug}`);
-  console.warn(`Cuerpo del PR listo en ${prBodyPath}. Siguiente paso:`);
+  console.warn('Siguiente paso. La descripcion del PR se genera despues del push,');
+  console.warn('porque enlaza las imagenes por SHA de commit y ese SHA aun no existe:');
   console.warn(
     `  git add docs/evidence/${slug} && git commit -m "docs(e2e): evidencia de ${branch}"`,
   );
   console.warn('  git push -u origin HEAD');
-  console.warn('  gh pr create --body-file .github/pr-body.md');
+  console.warn('  pnpm pr:body');
 }
 
 main();

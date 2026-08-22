@@ -21,7 +21,8 @@
     "evidence": "tsx scripts/evidence.mts",
     "prepare": "husky",
     "build:shared": "pnpm --filter @payments/shared build",
-    "coverage:report": "tsx scripts/coverage-report.mts"
+    "coverage:report": "tsx scripts/coverage-report.mts",
+    "pr:body": "tsx scripts/pr-body.mts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",

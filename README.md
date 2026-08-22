@@ -114,15 +114,28 @@ Ritual antes de abrir un PR:
 
 ```bash
 pnpm test:cov
-pnpm evidence
+pnpm evidence                       # capturas en docs/evidence/<rama>
 git add docs/evidence/<rama>
 git commit -m "docs(e2e): evidencia de <rama>"
 git push -u origin HEAD
+pnpm pr:body                        # enlaza por SHA y verifica cada imagen
 gh pr create --body-file .github/pr-body.md
 ```
 
-`pnpm evidence` compila los artefactos, corre Playwright capturando pantallas en
-375×667 y 1280×800, y deja listo el cuerpo del PR con las imágenes enlazadas.
+`pnpm evidence` compila los artefactos y corre Playwright capturando pantallas en
+375×667 y 1280×800. `pnpm pr:body` se ejecuta **después del push** y arma la
+descripción del PR.
+
+Son dos pasos y no uno por una razón concreta: las imágenes se enlazan por **SHA de
+commit**, no por nombre de rama. Una URL de rama deja de resolver en cuanto la rama
+se borra —justo lo que hace un squash merge con `--delete-branch`—, y todas las
+imágenes del PR ya mergeado se rompen en silencio. GitHub conserva
+`refs/pull/N/head` para siempre, así que un SHA nunca caduca; pero ese SHA no existe
+hasta después del push. Además `pnpm pr:body` hace un `HEAD` contra cada URL y
+aborta si alguna no devuelve `200`, de modo que una descripción con imágenes muertas
+no puede llegar a un PR.
+
+Si el PR ya está abierto, `pnpm pr:body --apply` actualiza su descripción en sitio.
 
 ## Decisiones de arquitectura
 
