@@ -10,6 +10,34 @@ import globals from 'globals';
  * `process.env` or `import.meta.env` anywhere else is how hardcoded values and
  * silent misconfiguration creep back in, so the build rejects it.
  */
+/**
+ * A `import type` is erased before runtime. Nest reads a DTO's *class* via
+ * reflect-metadata to validate a @Body()/@Query()/@Param() parameter, so a DTO
+ * stripped to a type-only import silently loses all of its validation —
+ * ValidationPipe falls back to `Object` and skips it, with no error anywhere. This
+ * guards the failure mode itself, since the DTO's own file still looks type-only
+ * from a pure usage analysis and `consistent-type-imports` would otherwise want to
+ * "fix" it right back.
+ */
+const DTO_SOURCE = '/\\.(dto|entity|entities)$/';
+
+const TYPE_ONLY_DTO_IMPORTS = [
+  // Whole-declaration form: `import type { X } from './x.dto'`.
+  {
+    selector: `ImportDeclaration[importKind='type'][source.value=${DTO_SOURCE}]`,
+    message:
+      'DTO and entity classes are read by reflect-metadata at runtime; import them as values, not `import type`.',
+  },
+  // Inline-specifier form — the one that actually broke validation here:
+  // `import { type X } from './x.dto'`. The specifier carries its own importKind,
+  // so the whole-declaration selector above does not see it.
+  {
+    selector: `ImportDeclaration[source.value=${DTO_SOURCE}] > ImportSpecifier[importKind='type']`,
+    message:
+      'DTO and entity classes are read by reflect-metadata at runtime; import them as values, not `{ type X }`.',
+  },
+];
+
 const NO_RAW_ENV_ACCESS = [
   {
     selector: 'MemberExpression[object.name="process"][property.name="env"]',
@@ -53,7 +81,7 @@ export default tseslint.config(
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
-      'no-restricted-syntax': ['error', ...NO_RAW_ENV_ACCESS],
+      'no-restricted-syntax': ['error', ...NO_RAW_ENV_ACCESS, ...TYPE_ONLY_DTO_IMPORTS],
       // Clarity guardrails: a function that outgrows these is doing too much.
       complexity: ['error', { max: 10 }],
       'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
