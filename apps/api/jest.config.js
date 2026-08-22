@@ -1,6 +1,8 @@
 /** @type {import('jest').Config} */
 module.exports = {
   rootDir: 'src',
+  // Migrations run once for the whole run, not per worker; see the file for why.
+  globalSetup: '<rootDir>/../jest.global-setup.ts',
   testEnvironment: 'node',
   // Integration specs open real database connections; the default 5s is not enough
   // for the first connection plus migrations on a cold container.

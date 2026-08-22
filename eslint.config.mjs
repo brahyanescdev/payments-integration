@@ -157,6 +157,7 @@ export default tseslint.config(
       'apps/*/src/config/**/*.ts',
       'apps/*/src/testing/**/*.ts',
       'apps/api/src/persistence/seed.ts',
+      '**/jest.global-setup.ts',
       '**/*.cli.ts',
       '**/*.config.ts',
       '**/*.config.js',

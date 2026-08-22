@@ -1,7 +1,6 @@
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver, UnderscoreNamingStrategy } from '@mikro-orm/postgresql';
 
-import type { AppConfig } from '../config/app.config';
 import { ProductEntity } from '../modules/catalog/infrastructure/persistence/product.entity';
 import {
   CustomerEntity,
@@ -9,6 +8,7 @@ import {
   StockMovementEntity,
   TransactionEntity,
 } from '../modules/checkout/infrastructure/persistence/checkout.entities';
+import type { MikroOrmSettings } from './orm-settings';
 
 /** Every persistence entity, registered explicitly rather than by directory glob. */
 export const ENTITIES = [
@@ -20,18 +20,19 @@ export const ENTITIES = [
 ];
 
 /**
- * Builds the ORM configuration from validated application configuration.
+ * Builds the ORM configuration.
  *
- * Takes {@link AppConfig} as a parameter so tests can point it at a throwaway
- * database without touching the environment.
+ * Takes {@link MikroOrmSettings} rather than the full application configuration so
+ * that migrations, the seeder and the tests can run knowing only where the database
+ * is — see `orm-settings.ts` for why that distinction matters.
  */
-export function buildMikroOrmConfig(config: AppConfig) {
+export function buildMikroOrmConfig(settings: MikroOrmSettings) {
   return defineConfig({
     // Stated explicitly rather than inferred from the import: `MikroOrmModule
     // .forRootAsync` cannot resolve the driver-specific ORM class from a factory
     // without it, and the failure only appears at Nest bootstrap.
     driver: PostgreSqlDriver,
-    clientUrl: config.database.url,
+    clientUrl: settings.databaseUrl,
     entities: ENTITIES,
     // Domain code speaks camelCase, PostgreSQL speaks snake_case; the strategy
     // translates so neither has to compromise.
@@ -44,7 +45,7 @@ export function buildMikroOrmConfig(config: AppConfig) {
       disableForeignKeys: false,
       snapshot: false,
     },
-    debug: config.nodeEnv === 'development',
+    debug: settings.debug,
     // Every request runs inside a unit of work that forks its own EntityManager, so
     // the global one is only ever used as a factory.
     allowGlobalContext: false,

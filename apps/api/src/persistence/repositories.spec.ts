@@ -216,14 +216,64 @@ describe('MikroORM repositories', () => {
     expect(duplicate._unsafeUnwrapErr().kind).toBe('Persistence');
   });
 
-  it('lists products with pagination and a stable order', async () => {
-    const page = await unitOfWork.run((repositories) => repositories.products.list(3, 0));
+  describe('product listing', () => {
+    // The suite creates its own catalogue rather than leaning on the seeder: a test
+    // that depends on seeded rows passes or fails according to how the database was
+    // last prepared, which is not a property of the code under test.
+    const extraIds: string[] = [];
 
-    const { items, total } = page._unsafeUnwrap();
-    expect(items).toHaveLength(3);
-    expect(total).toBeGreaterThanOrEqual(6);
-    expect([...items].map((product) => product.name)).toEqual(
-      [...items].map((product) => product.name).sort((a, b) => a.localeCompare(b)),
-    );
+    beforeEach(async () => {
+      const em = orm.em.fork();
+
+      for (const suffix of ['aaa', 'bbb', 'ccc']) {
+        const id = randomUUID();
+        extraIds.push(id);
+
+        const row = new ProductEntity();
+        row.id = id;
+        row.sku = `LIST-${suffix}-${id.slice(0, 8)}`;
+        row.name = `zzz-listado-${suffix}`;
+        row.description = 'Fixture de paginación.';
+        row.priceInCents = 500_000;
+        row.currency = 'COP';
+        row.imageUrl = '/images/test.svg';
+        row.stock = 1;
+        em.persist(row);
+      }
+
+      await em.flush();
+    });
+
+    afterEach(async () => {
+      await orm.em.fork().nativeDelete(ProductEntity, { id: { $in: extraIds } });
+      extraIds.length = 0;
+    });
+
+    it('honours the page size and reports the full total', async () => {
+      const page = await unitOfWork.run((repositories) => repositories.products.list(2, 0));
+
+      const { items, total } = page._unsafeUnwrap();
+
+      expect(items).toHaveLength(2);
+      expect(total).toBeGreaterThanOrEqual(4);
+    });
+
+    it('orders by name so paging is stable rather than arbitrary', async () => {
+      const page = await unitOfWork.run((repositories) => repositories.products.list(50, 0));
+
+      const names = page._unsafeUnwrap().items.map((product) => product.name);
+
+      expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    });
+
+    it('returns disjoint pages, so nothing is skipped or shown twice', async () => {
+      const first = await unitOfWork.run((repositories) => repositories.products.list(2, 0));
+      const second = await unitOfWork.run((repositories) => repositories.products.list(2, 2));
+
+      const firstIds = first._unsafeUnwrap().items.map((product) => product.id);
+      const secondIds = second._unsafeUnwrap().items.map((product) => product.id);
+
+      expect(secondIds.some((id) => firstIds.includes(id))).toBe(false);
+    });
   });
 });

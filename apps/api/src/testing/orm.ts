@@ -1,8 +1,7 @@
 import { MikroORM } from '@mikro-orm/postgresql';
 
-import { loadAppConfig } from '../config/app.config';
 import { buildMikroOrmConfig } from '../persistence/mikro-orm.config';
-import { makeEnv } from '../config/env.fixture';
+import { loadOrmSettings } from '../persistence/orm-settings';
 
 /**
  * Opens an ORM instance against the integration-test database.
@@ -11,21 +10,17 @@ import { makeEnv } from '../config/env.fixture';
  * container — and otherwise falls back to the local `docker compose` stack, so
  * `pnpm db:up && pnpm test` works with no further setup.
  *
- * Migrations are applied on connect, which keeps the suite self-sufficient: a fresh
- * container needs no manual preparation step, and a schema change that was never
- * captured in a migration fails the tests instead of passing silently.
+ * The schema is prepared once by `jest.global-setup.ts`, so this only opens a
+ * connection — migrating here would race between parallel Jest workers.
  */
 export async function openTestOrm() {
-  const config = loadAppConfig(
-    makeEnv({
-      DATABASE_URL:
-        process.env.DATABASE_URL ?? 'postgresql://payments:payments@localhost:5432/payments',
-    }),
-  );
+  const settings = loadOrmSettings({
+    ...process.env,
+    DATABASE_URL:
+      process.env.DATABASE_URL ?? 'postgresql://payments:payments@localhost:5432/payments',
+    NODE_ENV: 'test',
+  });
 
-  // NODE_ENV is `test` in the fixture, so the builder already turns query logging off.
-  const orm = await MikroORM.init(buildMikroOrmConfig(config));
-  await orm.getMigrator().up();
-
-  return orm;
+  // NODE_ENV is pinned to `test`, so the builder keeps query logging off.
+  return MikroORM.init(buildMikroOrmConfig(settings));
 }

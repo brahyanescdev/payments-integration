@@ -10,9 +10,9 @@ import { existsSync } from 'node:fs';
 
 import { config as loadEnvFile } from 'dotenv';
 
-import { loadAppConfig } from '../config/app.config';
 import { ENV_FILE_CANDIDATES } from '../config/env-file';
 import { buildMikroOrmConfig } from './mikro-orm.config';
+import { loadOrmSettings } from './orm-settings';
 
 const envFile = ENV_FILE_CANDIDATES.find((candidate) => existsSync(candidate));
 
@@ -20,4 +20,4 @@ if (envFile !== undefined) {
   loadEnvFile({ path: envFile });
 }
 
-export default buildMikroOrmConfig(loadAppConfig(process.env));
+export default buildMikroOrmConfig(loadOrmSettings(process.env));

@@ -26,7 +26,11 @@ import { MikroUnitOfWork } from './mikro-unit-of-work';
       // run, so without it the container cannot resolve `PostgreSqlMikroORM`.
       driver: PostgreSqlDriver,
       inject: [APP_CONFIG],
-      useFactory: (config: AppConfig) => buildMikroOrmConfig(config),
+      useFactory: (config: AppConfig) =>
+        buildMikroOrmConfig({
+          databaseUrl: config.database.url,
+          debug: config.nodeEnv === 'development',
+        }),
     }),
   ],
   providers: [

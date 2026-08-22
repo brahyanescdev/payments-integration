@@ -18,10 +18,10 @@ import { existsSync } from 'node:fs';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { config as loadEnvFile } from 'dotenv';
 
-import { loadAppConfig } from '../config/app.config';
 import { ENV_FILE_CANDIDATES } from '../config/env-file';
 import { ProductEntity } from '../modules/catalog/infrastructure/persistence/product.entity';
 import { buildMikroOrmConfig } from './mikro-orm.config';
+import { loadOrmSettings } from './orm-settings';
 import seedData from './products.seed.json';
 
 interface SeedProduct {
@@ -53,7 +53,7 @@ async function seed(): Promise<void> {
     loadEnvFile({ path: envFile });
   }
 
-  const orm = await MikroORM.init(buildMikroOrmConfig(loadAppConfig(process.env)));
+  const orm = await MikroORM.init(buildMikroOrmConfig(loadOrmSettings(process.env)));
   const em = orm.em.fork();
 
   let created = 0;
