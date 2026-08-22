@@ -52,6 +52,80 @@ La **regla de dependencia** (`domain` → nada; `application` → `domain`;
 `infrastructure` → todo) no es una convención documentada: la aplica
 `eslint-plugin-boundaries` y romperla rompe el build.
 
+## Modelo de datos
+
+```mermaid
+erDiagram
+    PRODUCTS {
+        uuid id PK
+        varchar sku UK
+        varchar name
+        text description
+        int price_in_cents
+        varchar currency
+        text image_url
+        int stock
+        int version "bloqueo optimista"
+    }
+    CUSTOMERS {
+        uuid id PK
+        varchar email UK "clave natural"
+        varchar full_name
+        varchar phone
+        varchar legal_id
+        enum legal_id_type "CC CE NIT PP"
+    }
+    TRANSACTIONS {
+        uuid id PK
+        varchar reference UK "ancla de idempotencia"
+        uuid customer_id FK
+        uuid product_id FK
+        int quantity
+        int product_amount_in_cents
+        int base_fee_in_cents
+        int delivery_fee_in_cents
+        int amount_in_cents
+        enum status "PENDING APPROVED DECLINED VOIDED ERROR"
+        varchar gateway_transaction_id
+        varchar card_brand "sin PAN"
+        varchar card_last_four "sin PAN"
+        int version "bloqueo optimista"
+    }
+    DELIVERIES {
+        uuid id PK
+        uuid transaction_id FK,UK
+        varchar recipient_name
+        varchar address_line1
+        varchar city
+        enum status "PENDING ASSIGNED CANCELLED"
+    }
+    STOCK_MOVEMENTS {
+        uuid id PK
+        uuid product_id FK
+        uuid transaction_id FK
+        enum type "RESERVE COMMIT RELEASE"
+        int quantity
+    }
+
+    CUSTOMERS ||--o{ TRANSACTIONS : "realiza"
+    PRODUCTS  ||--o{ TRANSACTIONS : "se vende en"
+    TRANSACTIONS ||--|| DELIVERIES : "se entrega mediante"
+    TRANSACTIONS ||--o{ STOCK_MOVEMENTS : "genera"
+    PRODUCTS  ||--o{ STOCK_MOVEMENTS : "afecta a"
+```
+
+Tres restricciones sostienen la corrección del sistema y merecen leerse juntas:
+
+| Restricción                                        | Qué impide                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| `transactions.reference` **único**                 | Un reintento hacia la pasarela no genera un segundo cobro    |
+| `stock_movements (transaction_id, type)` **único** | Un webhook reenviado no vuelve a mover el inventario         |
+| `products.version` (bloqueo optimista)             | Dos compradores simultáneos no venden la misma última unidad |
+
+El inventario es un **ledger de solo anexado**: `RESERVE` al abrir la transacción,
+`COMMIT` si el pago se aprueba y `RELEASE` si falla. Nunca se actualiza ni se borra
+un movimiento, así que el histórico explica cómo se llegó al stock actual.
+
 ## Puesta en marcha
 
 Requisitos: Node ≥ 20, pnpm 11, Docker.
@@ -60,8 +134,14 @@ Requisitos: Node ≥ 20, pnpm 11, Docker.
 cp .env.example .env
 pnpm install
 pnpm db:up
+pnpm --filter @payments/api migration:up
+pnpm --filter @payments/api seed
 pnpm build
 ```
+
+> `pnpm db:up` usa `docker compose`. Si tu Docker no trae el plugin de Compose
+> (habitual con Colima), instálalo con `brew install docker-compose` y enlázalo:
+> `mkdir -p ~/.docker/cli-plugins && ln -sf $(brew --prefix)/bin/docker-compose ~/.docker/cli-plugins/docker-compose`.
 
 Desarrollo:
 

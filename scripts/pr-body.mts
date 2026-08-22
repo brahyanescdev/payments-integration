@@ -139,10 +139,15 @@ async function main(): Promise<void> {
   const bodyPath = join(repoRoot, '.github', 'pr-body.md');
   writeFileSync(bodyPath, body, 'utf8');
 
-  console.warn(`${entries.length} imagenes verificadas (HTTP 200) en el commit ${commit.slice(0, 7)}.`);
+  console.warn(
+    `${entries.length} imagenes verificadas (HTTP 200) en el commit ${commit.slice(0, 7)}.`,
+  );
 
   if (process.argv.includes('--apply')) {
-    execFileSync('gh', ['pr', 'edit', '--body-file', bodyPath], { cwd: repoRoot, stdio: 'inherit' });
+    execFileSync('gh', ['pr', 'edit', '--body-file', bodyPath], {
+      cwd: repoRoot,
+      stdio: 'inherit',
+    });
     console.warn('Descripcion del PR actualizada.');
     return;
   }

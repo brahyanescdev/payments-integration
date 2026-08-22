@@ -91,6 +91,9 @@ export default tseslint.config(
           mode: 'full',
           capture: ['module'],
         },
+        // Shared persistence wiring: same privileges as any other adapter, it just
+        // lives outside a single module because it composes all of them.
+        { type: 'infrastructure', pattern: 'apps/api/src/persistence/**/*', mode: 'full' },
         {
           type: 'module-root',
           pattern: 'apps/api/src/modules/*/*.ts',
@@ -146,10 +149,15 @@ export default tseslint.config(
     },
   },
 
-  // Config modules are the single sanctioned place to touch raw environment values.
+  // Raw environment access is confined to config modules and to the entry points
+  // that bootstrap configuration before any container exists: the ORM CLI, the
+  // seeder, tooling scripts and the integration-test harness.
   {
     files: [
       'apps/*/src/config/**/*.ts',
+      'apps/*/src/testing/**/*.ts',
+      'apps/api/src/persistence/seed.ts',
+      '**/*.cli.ts',
       '**/*.config.ts',
       '**/*.config.js',
       'scripts/**/*.{ts,mts}',

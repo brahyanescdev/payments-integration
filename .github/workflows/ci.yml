@@ -23,6 +23,20 @@ jobs:
   api:
     name: api
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: payments
+          POSTGRES_PASSWORD: payments
+          POSTGRES_DB: payments
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U payments -d payments"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -44,8 +58,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Unit tests with coverage gate
+      # The unit specs need no database; the persistence specs prove the unit of work
+      # actually withholds a commit, which only a real PostgreSQL can demonstrate.
+      - name: Tests with coverage gate
         run: pnpm --filter @payments/shared test:cov && pnpm --filter @payments/api test:cov
+        env:
+          DATABASE_URL: postgresql://payments:payments@localhost:5432/payments
 
       # Collected into a flat folder with explicit names: upload-artifact derives the
       # archive root from the common ancestor of its inputs, so a one-file upload and
@@ -191,6 +209,15 @@ jobs:
         run: pnpm build
         env:
           VITE_API_BASE_URL: http://localhost:3000/api/v1
+
+      # The API connects to PostgreSQL at boot, so the schema has to exist before
+      # Playwright starts it. Migrations are applied explicitly, never implicitly at
+      # startup: a service that mutates the schema as a side effect of deploying is
+      # a service that can corrupt production during a rollback.
+      - name: Prepare the database
+        run: pnpm --filter @payments/api migration:up && pnpm --filter @payments/api seed
+        env:
+          DATABASE_URL: postgresql://payments:payments@localhost:5432/payments
 
       # The fake gateway keeps runs deterministic: the shared sandbox account can be
       # signed out from elsewhere, which would fail the pipeline for reasons that

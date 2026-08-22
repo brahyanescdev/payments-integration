@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
 
 import { APP_CONFIG, loadAppConfig } from './app.config';
+import { ENV_FILE_CANDIDATES } from './env-file';
 
 /**
  * Composition root for configuration.
@@ -12,7 +13,13 @@ import { APP_CONFIG, loadAppConfig } from './app.config';
  */
 @Global()
 @Module({
-  imports: [NestConfigModule.forRoot({ isGlobal: true, cache: true })],
+  imports: [
+    NestConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      envFilePath: [...ENV_FILE_CANDIDATES],
+    }),
+  ],
   providers: [
     {
       provide: APP_CONFIG,

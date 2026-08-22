@@ -2,6 +2,9 @@
 module.exports = {
   rootDir: 'src',
   testEnvironment: 'node',
+  // Integration specs open real database connections; the default 5s is not enough
+  // for the first connection plus migrations on a cold container.
+  testTimeout: 30_000,
   transform: {
     '^.+\\.ts$': [
       '@swc/jest',
@@ -21,8 +24,15 @@ module.exports = {
     '**/*.ts',
     '!**/*.spec.ts',
     '!**/*.fixture.ts',
+    '!testing/**',
     '!**/*.module.ts',
+    // Entry points and generated schema scripts: composition and SQL, not logic.
+    // They are exercised end to end by Playwright and by the migration run in CI,
+    // which is the level at which they can actually fail.
     '!**/main.ts',
+    '!**/*.cli.ts',
+    '!persistence/seed.ts',
+    '!persistence/migrations/**',
     '!**/index.ts',
   ],
   coverageDirectory: '../coverage',

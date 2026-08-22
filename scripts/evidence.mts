@@ -91,7 +91,11 @@ function readManifest(evidenceDir: string): EvidenceEntry[] {
 
   // Kept beside the captures: `pnpm pr:body` reads it to build the description, and
   // it documents what each image proves for anyone browsing the folder later.
-  writeFileSync(join(evidenceDir, 'manifest.json'), `${JSON.stringify(entries, null, 2)}\n`, 'utf8');
+  writeFileSync(
+    join(evidenceDir, 'manifest.json'),
+    `${JSON.stringify(entries, null, 2)}\n`,
+    'utf8',
+  );
 
   return entries;
 }
