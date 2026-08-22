@@ -1,0 +1,26 @@
+[
+  {
+    "order": 1,
+    "label": "Shell de la aplicacion",
+    "file": "01-mobile-shell-de-la-aplicacion.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "the SPA boots and renders its shell"
+  },
+  {
+    "order": 2,
+    "label": "Swagger UI con la API en linea",
+    "file": "01-desktop-swagger-ui-con-la-api-en-linea.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "serves the OpenAPI explorer"
+  },
+  {
+    "order": 3,
+    "label": "Shell de la aplicacion",
+    "file": "02-desktop-shell-de-la-aplicacion.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "the SPA boots and renders its shell"
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "currency": "COP",
+  "products": [
+    {
+      "id": "0a2f1d3e-1111-4a2b-8c1d-000000000001",
+      "sku": "TEE-ESENCIAL-ORG",
+      "name": "Camiseta Orgánica Esencial",
+      "description": "Algodón orgánico peinado de 180 g/m², corte regular y costuras reforzadas. Tejida en Medellín.",
+      "priceInCents": 8900000,
+      "imagePath": "/images/tee-esencial.svg",
+      "stock": 12
+    },
+    {
+      "id": "0a2f1d3e-1111-4a2b-8c1d-000000000002",
+      "sku": "HOOD-BRUMA-GRY",
+      "name": "Sudadera con Capucha Bruma",
+      "description": "Felpa perchada de 320 g/m², capucha forrada y bolsillo canguro. Cae holgada sin perder forma.",
+      "priceInCents": 18900000,
+      "imagePath": "/images/hoodie-bruma.svg",
+      "stock": 8
+    },
+    {
+      "id": "0a2f1d3e-1111-4a2b-8c1d-000000000003",
+      "sku": "BAG-URBANA-20L",
+      "name": "Mochila Urbana 20L",
+      "description": "Lona encerada resistente al agua, compartimento acolchado para portátil de 15\" y correas ergonómicas.",
+      "priceInCents": 24900000,
+      "imagePath": "/images/mochila-urbana.svg",
+      "stock": 5
+    },
+    {
+      "id": "0a2f1d3e-1111-4a2b-8c1d-000000000004",
+      "sku": "CAP-CLASICA-BLK",
+      "name": "Gorra Estructurada Clásica",
+      "description": "Seis paneles en sarga de algodón, visera precurvada y cierre metálico ajustable.",
+      "priceInCents": 6900000,
+      "imagePath": "/images/gorra-clasica.svg",
+      "stock": 20
+    },
+    {
+      "id": "0a2f1d3e-1111-4a2b-8c1d-000000000005",
+      "sku": "JKT-ANDES-WND",
+      "name": "Chaqueta Cortavientos Andes",
+      "description": "Nailon ripstop ultraligero con costuras selladas y capucha plegable en el cuello. Empaca en su propio bolsillo.",
+      "priceInCents": 32900000,
+      "imagePath": "/images/chaqueta-andes.svg",
+      "stock": 3
+    },
+    {
+      "id": "0a2f1d3e-1111-4a2b-8c1d-000000000006",
+      "sku": "SOCK-TERMICA-X3",
+      "name": "Medias Térmicas (pack x3)",
+      "description": "Mezcla de lana merino y poliamida, puño elástico sin marca y refuerzo en talón y punta.",
+      "priceInCents": 4500000,
+      "imagePath": "/images/medias-termicas.svg",
+      "stock": 0
+    }
+  ]
+}
