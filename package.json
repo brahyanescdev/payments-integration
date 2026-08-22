@@ -20,7 +20,8 @@
     "e2e": "pnpm --filter @payments/e2e test",
     "evidence": "tsx scripts/evidence.mts",
     "prepare": "husky",
-    "build:shared": "pnpm --filter @payments/shared build"
+    "build:shared": "pnpm --filter @payments/shared build",
+    "coverage:report": "tsx scripts/coverage-report.mts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
