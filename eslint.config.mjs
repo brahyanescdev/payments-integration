@@ -157,6 +157,12 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': 'off' },
   },
 
+  // Developer CLIs: writing to stdout is their output, not stray debugging.
+  {
+    files: ['scripts/**/*.{ts,mts}'],
+    rules: { 'no-console': 'off' },
+  },
+
   // Tests describe scenarios; length and console noise limits get in the way there.
   {
     files: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', 'e2e/**/*.ts'],
