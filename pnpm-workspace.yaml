@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'e2e'
+
+# Install scripts are opt-in. Native toolchains need theirs; analytics does not.
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+  '@scarf/scarf': false

@@ -1,0 +1,17 @@
+{
+  "name": "@payments/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@payments/shared": "workspace:*",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  }
+}
