@@ -149,6 +149,29 @@ describe('PayCheckoutUseCase', () => {
     expect(result._unsafeUnwrapErr().kind).toBe('TransactionNotFound');
   });
 
+  it('fails with TransactionNotFound when the transaction names a customer that no longer exists', async () => {
+    const repositories = makeRepositories().repositories;
+    repositories.transactions.findById = () =>
+      okAsync(
+        makeTransaction({
+          productId: PRODUCT_ID,
+          customerId: 'does-not-exist',
+        }),
+      );
+    const gateway = gatewayThatReturns({
+      gatewayTransactionId: 'gw_6',
+      status: 'APPROVED',
+      failureReason: null,
+    });
+
+    const result = await makeUseCase(repositories, gateway).execute(
+      '22222222-2222-4222-8222-222222222222',
+      PAY_INPUT,
+    );
+
+    expect(result._unsafeUnwrapErr().kind).toBe('TransactionNotFound');
+  });
+
   it('fails with TransactionNotPending when the transaction already settled', async () => {
     const repositories = makeRepositories().repositories;
     repositories.transactions.findById = () =>

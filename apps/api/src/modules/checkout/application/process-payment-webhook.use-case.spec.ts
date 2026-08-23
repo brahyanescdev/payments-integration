@@ -25,6 +25,7 @@ function makePayload(
     status?: string;
     reference?: string | null;
     checksum?: string;
+    omitSignedAmount?: boolean;
   } = {},
 ): WebhookPayload {
   const status = overrides.status ?? 'APPROVED';
@@ -34,7 +35,7 @@ function makePayload(
     transaction: {
       id: 'gw-tx-1',
       status,
-      amount_in_cents: 10_000_000,
+      ...(overrides.omitSignedAmount === true ? {} : { amount_in_cents: 10_000_000 }),
       ...(reference === null ? {} : { reference }),
       status_message: status === 'APPROVED' ? null : 'INSUFFICIENT_FUNDS',
     },
@@ -139,6 +140,15 @@ describe('ProcessPaymentWebhookUseCase', () => {
 
     expect(result._unsafeUnwrapErr().kind).toBe('InvalidWebhookSignature');
     expect(transaction.status).toBe('PENDING');
+  });
+
+  it('treats a signed property absent from the payload as an empty string, same on both sides of the checksum', async () => {
+    const transaction = makeTransaction({ reference: REFERENCE, productId: PRODUCT_ID });
+    const { repositories } = makeRepositories(transaction);
+
+    const result = await makeUseCase(repositories).execute(makePayload({ omitSignedAmount: true }));
+
+    expect(result._unsafeUnwrap()).toBe('settled');
   });
 
   it('fails with TransactionNotFound when the reference names no transaction', async () => {

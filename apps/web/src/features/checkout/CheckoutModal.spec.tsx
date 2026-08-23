@@ -123,6 +123,21 @@ describe('CheckoutModal', () => {
     expect(called).toBe(false);
   });
 
+  it('shows a validation error on a nested field, e.g. an invalid buyer email', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CheckoutModalHost />, { preloadedState: OPENED_STATE });
+
+    await fillValidForm(user);
+    const emailInput = screen.getByLabelText(t.checkout.emailLabel);
+    await user.clear(emailInput);
+    await user.type(emailInput, 'not-an-email');
+    await user.click(screen.getByTestId(TEST_IDS.checkoutModal.submit));
+
+    // "Correo electrónico" is the only Spanish label; "email" only ever shows up
+    // in Zod's own validation message for this field, nested under `customer.email`.
+    await waitFor(() => expect(screen.getByText(/email/i)).toBeInTheDocument());
+  });
+
   it('opens the checkout and tokenises the card on submit, without ever sending the raw card number to our own API', async () => {
     const user = userEvent.setup();
     let receivedCheckoutBody: Record<string, unknown> | undefined;
