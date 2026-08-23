@@ -1,7 +1,9 @@
 import { TEST_IDS } from '@payments/shared';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { makeProductDto } from '../../testing/product.fixture';
+import { renderWithProviders as render } from '../../testing/render';
 import { ProductCard } from './ProductCard';
 
 describe('ProductCard', () => {
@@ -37,5 +39,27 @@ describe('ProductCard', () => {
     expect(image).toHaveAttribute('height', '400');
     expect(image).toHaveAttribute('loading', 'lazy');
     expect(image).toHaveAttribute('src', '/images/tee.svg');
+  });
+});
+
+describe('ProductCard — opening checkout', () => {
+  it('opens the checkout for the selected quantity when the pay button is clicked', async () => {
+    const user = userEvent.setup();
+    const { store } = render(
+      <ProductCard product={makeProductDto({ stock: 5, isAvailable: true })} />,
+    );
+
+    await user.selectOptions(screen.getByRole('combobox'), '3');
+    await user.click(screen.getByTestId(TEST_IDS.productPage.payWithCardButton));
+
+    const state = store.getState() as { checkout: { step: string; quantity: number } };
+    expect(state.checkout.step).toBe('form');
+    expect(state.checkout.quantity).toBe(3);
+  });
+
+  it('shows no quantity selector or pay button once stock is exhausted', () => {
+    render(<ProductCard product={makeProductDto({ stock: 0, isAvailable: false })} />);
+
+    expect(screen.queryByTestId(TEST_IDS.productPage.payWithCardButton)).not.toBeInTheDocument();
   });
 });

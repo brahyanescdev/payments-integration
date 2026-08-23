@@ -1,5 +1,6 @@
 import { TEST_IDS } from '@payments/shared';
 
+import { CheckoutModalHost } from './features/checkout/CheckoutModal';
 import { ProductsPage } from './pages/ProductsPage';
 import { t } from './i18n/es';
 
@@ -17,6 +18,7 @@ export function App() {
       <main className="flex flex-1 flex-col pt-4">
         <ProductsPage />
       </main>
+      <CheckoutModalHost />
     </div>
   );
 }
