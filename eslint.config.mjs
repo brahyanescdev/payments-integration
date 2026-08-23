@@ -217,5 +217,13 @@ export default tseslint.config(
     },
   },
 
+  // Named `*.integration.spec.ts`: these deliberately prove a use case against a
+  // real adapter (MikroORM, Postgres), which is exactly what the hexagonal
+  // boundary forbids everywhere else. The naming convention is the opt-in.
+  {
+    files: ['**/*.integration.spec.ts'],
+    rules: { 'boundaries/external': 'off' },
+  },
+
   prettier,
 );

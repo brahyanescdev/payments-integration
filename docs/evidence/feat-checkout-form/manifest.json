@@ -1,0 +1,74 @@
+[
+  {
+    "order": 1,
+    "label": "Modal de tarjeta con marca detectada",
+    "file": "01-mobile-modal-de-tarjeta-con-marca-detectada.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "detecta la marca VISA mientras se escribe el número"
+  },
+  {
+    "order": 2,
+    "label": "Confirmacion tras abrir el checkout",
+    "file": "02-mobile-confirmacion-tras-abrir-el-checkout.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "abre el checkout y muestra la confirmación, sin recargar la página"
+  },
+  {
+    "order": 3,
+    "label": "Catalogo de productos",
+    "file": "03-mobile-catalogo-de-productos.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "muestra el catálogo con precio, stock e imagen"
+  },
+  {
+    "order": 4,
+    "label": "Shell de la aplicacion",
+    "file": "04-mobile-shell-de-la-aplicacion.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "the SPA boots and renders its shell"
+  },
+  {
+    "order": 5,
+    "label": "Swagger UI con la API en linea",
+    "file": "01-desktop-swagger-ui-con-la-api-en-linea.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "serves the OpenAPI explorer"
+  },
+  {
+    "order": 6,
+    "label": "Modal de tarjeta con marca detectada",
+    "file": "02-desktop-modal-de-tarjeta-con-marca-detectada.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "detecta la marca VISA mientras se escribe el número"
+  },
+  {
+    "order": 7,
+    "label": "Confirmacion tras abrir el checkout",
+    "file": "03-desktop-confirmacion-tras-abrir-el-checkout.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "abre el checkout y muestra la confirmación, sin recargar la página"
+  },
+  {
+    "order": 8,
+    "label": "Catalogo de productos",
+    "file": "04-desktop-catalogo-de-productos.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "muestra el catálogo con precio, stock e imagen"
+  },
+  {
+    "order": 9,
+    "label": "Shell de la aplicacion",
+    "file": "05-desktop-shell-de-la-aplicacion.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "the SPA boots and renders its shell"
+  }
+]

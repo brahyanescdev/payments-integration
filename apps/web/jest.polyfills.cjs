@@ -39,3 +39,11 @@ Object.assign(globalThis, {
 const { fetch, Headers, Request, Response, FormData } = require('undici');
 
 Object.assign(globalThis, { fetch, Headers, Request, Response, FormData });
+
+// jsdom's own `crypto` implements getRandomValues but not randomUUID (a newer
+// Web Crypto addition); patched onto the existing object rather than replaced,
+// so the rest of jsdom's crypto surface stays intact. Used to mint a fresh
+// idempotency key each time the checkout modal opens.
+if (typeof globalThis.crypto?.randomUUID !== 'function') {
+  globalThis.crypto.randomUUID = require('node:crypto').randomUUID;
+}
