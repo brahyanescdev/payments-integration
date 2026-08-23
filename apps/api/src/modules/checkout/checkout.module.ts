@@ -17,13 +17,23 @@ import {
   GET_ACCEPTANCE_TOKENS_USE_CASE,
   GetAcceptanceTokensUseCase,
 } from './application/get-acceptance-tokens.use-case';
+import {
+  GET_TRANSACTION_USE_CASE,
+  GetTransactionUseCase,
+} from './application/get-transaction.use-case';
 import { PAY_CHECKOUT_USE_CASE, PayCheckoutUseCase } from './application/pay-checkout.use-case';
+import {
+  PROCESS_PAYMENT_WEBHOOK_USE_CASE,
+  ProcessPaymentWebhookUseCase,
+} from './application/process-payment-webhook.use-case';
 import {
   SETTLE_TRANSACTION_USE_CASE,
   SettleTransactionUseCase,
 } from './application/settle-transaction.use-case';
 import { PricingPolicy } from './domain/pricing-policy';
 import { CheckoutController } from './infrastructure/http/checkout.controller';
+import { TransactionsController } from './infrastructure/http/transactions.controller';
+import { WebhooksController } from './infrastructure/http/webhooks.controller';
 
 /** Injection token for the {@link PricingPolicy} instance, built from configuration. */
 const PRICING_POLICY = Symbol('PRICING_POLICY');
@@ -31,7 +41,7 @@ const PRICING_POLICY = Symbol('PRICING_POLICY');
 /** Wiring for the checkout slice: opening a transaction, paying it, and reading the gateway's terms. */
 @Module({
   imports: [PaymentsModule],
-  controllers: [CheckoutController],
+  controllers: [CheckoutController, TransactionsController, WebhooksController],
   providers: [
     { provide: CLOCK, useClass: SystemClock },
     { provide: ID_GENERATOR, useClass: UuidGenerator },
@@ -75,6 +85,27 @@ const PRICING_POLICY = Symbol('PRICING_POLICY');
         clock: Clock,
       ) => new PayCheckoutUseCase(unitOfWork, gateway, settleTransaction, clock),
       inject: [UNIT_OF_WORK, PAYMENT_GATEWAY, SETTLE_TRANSACTION_USE_CASE, CLOCK],
+    },
+    {
+      provide: GET_TRANSACTION_USE_CASE,
+      useFactory: (unitOfWork: UnitOfWork) => new GetTransactionUseCase(unitOfWork),
+      inject: [UNIT_OF_WORK],
+    },
+    {
+      provide: PROCESS_PAYMENT_WEBHOOK_USE_CASE,
+      useFactory: (
+        unitOfWork: UnitOfWork,
+        settleTransaction: SettleTransactionUseCase,
+        ids: IdGenerator,
+        config: AppConfig,
+      ) =>
+        new ProcessPaymentWebhookUseCase(
+          unitOfWork,
+          settleTransaction,
+          ids,
+          config.psp.eventsSecret,
+        ),
+      inject: [UNIT_OF_WORK, SETTLE_TRANSACTION_USE_CASE, ID_GENERATOR, APP_CONFIG],
     },
   ],
 })

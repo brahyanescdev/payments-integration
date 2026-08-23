@@ -8,6 +8,7 @@ import type {
   TransactionRepository,
 } from '../../modules/checkout/domain/ports/checkout.repositories';
 import type { DomainError } from '../result/domain-error';
+import type { WebhookEventRepository } from '../../persistence/webhook-event.repository';
 
 /**
  * The repositories a use case may touch inside one transactional boundary.
@@ -22,6 +23,7 @@ export interface RepositoryRegistry {
   readonly customers: CustomerRepository;
   readonly deliveries: DeliveryRepository;
   readonly stockMovements: StockMovementRepository;
+  readonly webhookEvents: WebhookEventRepository;
 }
 
 /**

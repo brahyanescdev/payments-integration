@@ -11,6 +11,7 @@ import {
 } from '../modules/checkout/infrastructure/persistence/mikro-checkout.repositories';
 import { concurrencyConflict, type DomainError, persistence } from '../shared/result/domain-error';
 import type { RepositoryRegistry, UnitOfWork } from '../shared/unit-of-work/unit-of-work.port';
+import { MikroWebhookEventRepository } from './mikro-webhook-event.repository';
 
 /**
  * Carries a business failure out through the ORM's exception-based rollback.
@@ -35,6 +36,7 @@ const registryFor = (em: EntityManager): RepositoryRegistry => ({
   customers: new MikroCustomerRepository(em),
   deliveries: new MikroDeliveryRepository(em),
   stockMovements: new MikroStockMovementRepository(em),
+  webhookEvents: new MikroWebhookEventRepository(em),
 });
 
 /**
