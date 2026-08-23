@@ -1,4 +1,9 @@
-import { createCheckoutSchema, deliveryInputSchema, payCheckoutSchema } from './checkout.contract';
+import {
+  acceptanceTokensSchema,
+  createCheckoutSchema,
+  deliveryInputSchema,
+  payCheckoutSchema,
+} from './checkout.contract';
 
 const validCustomer = {
   email: 'ana@example.com',
@@ -109,5 +114,39 @@ describe('payCheckoutSchema', () => {
 
   it.each([0, 37, 2.5])('rejects the installment count %p', (installments) => {
     expect(payCheckoutSchema.safeParse({ ...validPayment, installments }).success).toBe(false);
+  });
+});
+
+describe('acceptanceTokensSchema', () => {
+  const validTokens = {
+    publicKey: 'pub_test_123',
+    tokenizationUrl: 'https://psp.example.test/v1/tokens/cards',
+    acceptance: { token: 'acc_token', permalink: 'https://psp.test/terms' },
+    personalDataAuthorization: { token: 'priv_token', permalink: 'https://psp.test/privacy' },
+  };
+
+  it('accepts a well-formed response', () => {
+    expect(acceptanceTokensSchema.parse(validTokens).publicKey).toBe('pub_test_123');
+  });
+
+  it('accepts a tokenization URL that is relative to our own API, for the fake gateway driver', () => {
+    const parsed = acceptanceTokensSchema.parse({
+      ...validTokens,
+      tokenizationUrl: '/api/v1/checkout/dev-tokenize',
+    });
+
+    expect(parsed.tokenizationUrl).toBe('/api/v1/checkout/dev-tokenize');
+  });
+
+  it('rejects a response with no tokenization URL', () => {
+    const { tokenizationUrl: _omitted, ...withoutUrl } = validTokens;
+
+    expect(acceptanceTokensSchema.safeParse(withoutUrl).success).toBe(false);
+  });
+
+  it('rejects a response missing the acceptance token', () => {
+    const { acceptance: _omitted, ...withoutAcceptance } = validTokens;
+
+    expect(acceptanceTokensSchema.safeParse(withoutAcceptance).success).toBe(false);
   });
 });

@@ -17,6 +17,29 @@ const OPENED_STATE = {
   },
 };
 
+const BREAKDOWN = {
+  productAmountInCents: 8_900_000,
+  baseFeeInCents: 300_000,
+  deliveryFeeInCents: 800_000,
+  totalInCents: 10_000_000,
+  currency: 'COP',
+};
+
+const SUMMARY_STATE = {
+  checkout: {
+    ...OPENED_STATE.checkout,
+    step: 'summary' as const,
+    transactionId: 'tx-1',
+    reference: 'TX-tx-1',
+    breakdown: BREAKDOWN,
+    cardMeta: { brand: 'visa' as const, lastFour: '4242' },
+    cardToken: 'tok_fake_4242_abc',
+    acceptanceToken: 'acc-token',
+    acceptPersonalAuthToken: 'auth-token',
+    payIdempotencyKey: 'pay-key-1',
+  },
+};
+
 /**
  * Types the raw digits into the card field in one native change event.
  *
@@ -99,28 +122,26 @@ describe('CheckoutModal', () => {
     expect(called).toBe(false);
   });
 
-  it('opens the checkout on submit and shows the success panel, without ever sending the raw card number', async () => {
+  it('opens the checkout and tokenises the card on submit, without ever sending the raw card number to our own API', async () => {
     const user = userEvent.setup();
-    let receivedBody: Record<string, unknown> | undefined;
+    let receivedCheckoutBody: Record<string, unknown> | undefined;
+    let receivedTokenizeBody: Record<string, unknown> | undefined;
     server.use(
       http.post(`*/${API_ROUTES.checkout.create}`, async ({ request }) => {
-        receivedBody = (await request.json()) as Record<string, unknown>;
+        receivedCheckoutBody = (await request.json()) as Record<string, unknown>;
 
         return HttpResponse.json(
-          {
-            transactionId: 'tx-1',
-            reference: 'TX-tx-1',
-            status: 'PENDING',
-            breakdown: {
-              productAmountInCents: 8_900_000,
-              baseFeeInCents: 300_000,
-              deliveryFeeInCents: 800_000,
-              totalInCents: 10_000_000,
-              currency: 'COP',
-            },
-          },
+          { transactionId: 'tx-1', reference: 'TX-tx-1', status: 'PENDING', breakdown: BREAKDOWN },
           { status: 201 },
         );
+      }),
+      http.post('*/checkout/dev-tokenize', async ({ request }) => {
+        receivedTokenizeBody = (await request.json()) as Record<string, unknown>;
+
+        return HttpResponse.json({
+          status: 'CREATED',
+          data: { id: 'tok_fake_4242_xyz', last_four: '4242' },
+        });
       }),
     );
 
@@ -128,20 +149,32 @@ describe('CheckoutModal', () => {
     await fillValidForm(user);
     await user.click(screen.getByTestId(TEST_IDS.checkoutModal.submit));
 
-    await waitFor(() => expect(screen.getByTestId(TEST_IDS.resultPage.status)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId(TEST_IDS.summaryBackdrop.root)).toBeInTheDocument(),
+    );
 
-    expect(receivedBody).not.toHaveProperty('cardNumber');
-    expect(receivedBody).not.toHaveProperty('cvc');
-    expect(receivedBody?.productId).toBe(OPENED_STATE.checkout.productId);
+    expect(receivedTokenizeBody?.number).toBe('4242424242424242');
+    expect(receivedTokenizeBody?.cvc).toBe('123');
+    expect(receivedCheckoutBody).not.toHaveProperty('cardNumber');
+    expect(receivedCheckoutBody).not.toHaveProperty('cvc');
+    expect(receivedCheckoutBody?.productId).toBe(OPENED_STATE.checkout.productId);
 
     const state = store.getState() as {
       checkout: {
         transactionId: string | null;
         cardMeta: { brand: string; lastFour: string } | null;
+        cardToken: string | null;
+        acceptanceToken: string | null;
+        acceptPersonalAuthToken: string | null;
+        payIdempotencyKey: string | null;
       };
     };
     expect(state.checkout.transactionId).toBe('tx-1');
     expect(state.checkout.cardMeta).toEqual({ brand: 'visa', lastFour: '4242' });
+    expect(state.checkout.cardToken).toBe('tok_fake_4242_xyz');
+    expect(state.checkout.acceptanceToken).not.toBeNull();
+    expect(state.checkout.acceptPersonalAuthToken).not.toBeNull();
+    expect(state.checkout.payIdempotencyKey).not.toBeNull();
   });
 
   it('shows a retry-friendly error and keeps the form when the server rejects the request', async () => {
@@ -183,29 +216,147 @@ describe('CheckoutModal', () => {
     expect(input.selectionStart).toBe(input.value.length);
   });
 
-  describe('the awaiting-payment success panel', () => {
-    const SUCCEEDED_STATE = {
+  describe('the summary screen', () => {
+    it('shows the price breakdown', () => {
+      renderWithProviders(<CheckoutModalHost />, { preloadedState: SUMMARY_STATE });
+
+      expect(screen.getByTestId(TEST_IDS.summaryBackdrop.productAmount)).toHaveTextContent(
+        '89.000',
+      );
+      expect(screen.getByTestId(TEST_IDS.summaryBackdrop.total)).toHaveTextContent('100.000');
+    });
+
+    it('charges the card and moves to the result screen on approval', async () => {
+      const user = userEvent.setup();
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.post('*/checkout/tx-1/pay', async ({ request }) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+
+          return HttpResponse.json({
+            id: 'tx-1',
+            reference: 'TX-tx-1',
+            status: 'APPROVED',
+            breakdown: BREAKDOWN,
+            card: { brand: 'visa', lastFour: '4242' },
+            failureReason: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }),
+      );
+
+      const { store } = renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: SUMMARY_STATE,
+      });
+      await user.click(screen.getByTestId(TEST_IDS.summaryBackdrop.payButton));
+
+      await waitFor(() => expect(screen.getByText(t.result.approvedTitle)).toBeInTheDocument());
+
+      expect(receivedBody).toEqual({
+        cardToken: 'tok_fake_4242_abc',
+        acceptanceToken: 'acc-token',
+        acceptPersonalAuthToken: 'auth-token',
+        installments: 1,
+        cardBrand: 'visa',
+        cardLastFour: '4242',
+      });
+
+      const state = store.getState() as {
+        checkout: { step: string; transactionStatus: string | null };
+      };
+      expect(state.checkout.step).toBe('result');
+      expect(state.checkout.transactionStatus).toBe('APPROVED');
+    });
+
+    it('shows a retry-friendly error and stays on the summary when the gateway rejects the charge', async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.post('*/checkout/tx-1/pay', () =>
+          HttpResponse.json(
+            { error: { kind: 'GatewayUnavailable', message: 'down' } },
+            { status: 502 },
+          ),
+        ),
+      );
+
+      const { store } = renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: SUMMARY_STATE,
+      });
+      await user.click(screen.getByTestId(TEST_IDS.summaryBackdrop.payButton));
+
+      await waitFor(() => expect(screen.getByText(t.summary.genericError)).toBeInTheDocument());
+
+      const state = store.getState() as { checkout: { step: string } };
+      expect(state.checkout.step).toBe('summary');
+    });
+
+    it('closes the modal, resetting the checkout, when cancel is pressed', async () => {
+      const user = userEvent.setup();
+      const { store } = renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: SUMMARY_STATE,
+      });
+
+      await user.click(screen.getByLabelText('Cerrar'));
+
+      const state = store.getState() as { checkout: { step: string } };
+      expect(state.checkout.step).toBe('idle');
+    });
+  });
+
+  describe('the result screen', () => {
+    const RESULT_STATE = {
       checkout: {
         ...OPENED_STATE.checkout,
-        step: 'awaiting-payment' as const,
+        step: 'result' as const,
         transactionId: 'tx-1',
         reference: 'TX-tx-1',
       },
     };
 
-    it('shows the transaction reference', () => {
-      renderWithProviders(<CheckoutModalHost />, { preloadedState: SUCCEEDED_STATE });
+    it('shows the approved copy and the transaction reference', () => {
+      renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: { checkout: { ...RESULT_STATE.checkout, transactionStatus: 'APPROVED' } },
+      });
 
+      expect(screen.getByText(t.result.approvedTitle)).toBeInTheDocument();
       expect(screen.getByText('TX-tx-1')).toBeInTheDocument();
+    });
+
+    it('shows the decline reason when the gateway reports one', () => {
+      renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: {
+          checkout: {
+            ...RESULT_STATE.checkout,
+            transactionStatus: 'DECLINED',
+            failureReason: 'insufficient_funds',
+          },
+        },
+      });
+
+      expect(screen.getByText(t.result.declinedTitle)).toBeInTheDocument();
+      expect(screen.getByText('insufficient_funds')).toBeInTheDocument();
     });
 
     it('resets to idle when the buyer dismisses it', async () => {
       const user = userEvent.setup();
       const { store } = renderWithProviders(<CheckoutModalHost />, {
-        preloadedState: SUCCEEDED_STATE,
+        preloadedState: { checkout: { ...RESULT_STATE.checkout, transactionStatus: 'APPROVED' } },
       });
 
-      await user.click(screen.getByRole('button', { name: t.checkout.cancel }));
+      await user.click(screen.getByTestId(TEST_IDS.resultPage.backToProduct));
+
+      const state = store.getState() as { checkout: { step: string } };
+      expect(state.checkout.step).toBe('idle');
+    });
+
+    it('also resets to idle when closed via the modal chrome, not just the explicit button', async () => {
+      const user = userEvent.setup();
+      const { store } = renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: { checkout: { ...RESULT_STATE.checkout, transactionStatus: 'APPROVED' } },
+      });
+
+      await user.click(screen.getByLabelText('Cerrar'));
 
       const state = store.getState() as { checkout: { step: string } };
       expect(state.checkout.step).toBe('idle');

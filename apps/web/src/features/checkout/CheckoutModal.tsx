@@ -1,5 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { TEST_IDS } from '@payments/shared';
+import {
+  TEST_IDS,
+  type AcceptanceTokensDto,
+  type AmountBreakdownDto,
+  type CheckoutCreatedDto,
+  type TransactionStatusDto,
+} from '@payments/shared';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   Controller,
@@ -15,12 +21,23 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import type { RootState } from '../../app/store';
 import { Modal } from '../../components/Modal';
+import { useConfig } from '../../config/config.context';
 import { t } from '../../i18n/es';
+import { formatMoney } from '../../shared/money';
 import { CardBrandBadge } from './CardBrandBadge';
 import { detectCardBrand, formatCardNumber, onlyDigits } from './card';
 import { useCheckoutApi } from './checkout-api.context';
 import { checkoutFormSchema, type CheckoutFormValues } from './checkout-form.schema';
-import { checkoutClosed, checkoutFailed, checkoutSucceeded } from './checkoutSlice';
+import {
+  checkoutClosed,
+  checkoutFailed,
+  checkoutSucceeded,
+  paymentSucceeded,
+} from './checkoutSlice';
+import { resolveTokenizationUrl, tokenizeCard } from './tokenize-card';
+
+/** The gateway supports up to 36; this checkout never offers instalments, so it always charges in one. */
+const SINGLE_INSTALLMENT = 1;
 
 const LEGAL_ID_TYPES = ['CC', 'CE', 'NIT', 'PP'] as const;
 
@@ -47,28 +64,179 @@ export function CheckoutModalHost() {
   const step = useSelector((state: RootState) => state.checkout.step);
 
   if (step === 'form') return <CheckoutModal />;
-  if (step === 'awaiting-payment') return <CheckoutSuccessPanel />;
+  if (step === 'summary') return <SummaryBackdrop />;
+  if (step === 'result') return <ResultPanel />;
 
   return null;
 }
 
-function CheckoutSuccessPanel() {
+/** Copy shown on the result screen for each terminal status the gateway can report. */
+const RESULT_COPY: Record<TransactionStatusDto, { title: string; body: string }> = {
+  APPROVED: { title: t.result.approvedTitle, body: t.result.approvedBody },
+  DECLINED: { title: t.result.declinedTitle, body: t.result.declinedBody },
+  ERROR: { title: t.result.errorTitle, body: t.result.errorBody },
+  VOIDED: { title: t.result.declinedTitle, body: t.result.declinedBody },
+  PENDING: { title: t.result.pendingTitle, body: t.result.pendingBody },
+};
+
+/** Screens 4–5: the final outcome of the charge. Polling an in-flight `PENDING` result is stage 6's concern. */
+function ResultPanel() {
   const dispatch = useDispatch();
-  const reference = useSelector((state: RootState) => state.checkout.reference);
+  const { reference, transactionStatus, failureReason } = useSelector(
+    (state: RootState) => state.checkout,
+  );
+  const copy = RESULT_COPY[transactionStatus ?? 'PENDING'];
 
   return (
-    <Modal title={t.checkout.successTitle} onClose={() => dispatch(checkoutClosed())}>
-      <p data-testid={TEST_IDS.resultPage.status} className="text-sm text-neutral-700">
-        {t.checkout.successBody}
-      </p>
-      {reference !== null && <p className="mt-2 text-xs text-neutral-500">{reference}</p>}
-      <button
-        type="button"
-        onClick={() => dispatch(checkoutClosed())}
-        className="mt-4 w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-      >
-        {t.checkout.cancel}
-      </button>
+    <Modal title={copy.title} onClose={() => dispatch(checkoutClosed())}>
+      <div data-testid={TEST_IDS.resultPage.root}>
+        <p data-testid={TEST_IDS.resultPage.status} className="text-sm text-neutral-700">
+          {copy.body}
+        </p>
+        {failureReason !== null && <p className="mt-2 text-xs text-neutral-500">{failureReason}</p>}
+        {reference !== null && <p className="mt-2 text-xs text-neutral-500">{reference}</p>}
+        <button
+          type="button"
+          data-testid={TEST_IDS.resultPage.backToProduct}
+          onClick={() => dispatch(checkoutClosed())}
+          className="mt-4 w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+        >
+          {t.result.backToProduct}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/** One line of the price breakdown: a label on the left, a formatted amount on the right. */
+function BreakdownRow({
+  label,
+  amountInCents,
+  currency,
+  testId,
+  emphasis = false,
+}: {
+  label: string;
+  amountInCents: number;
+  currency: string;
+  testId: string;
+  emphasis?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between ${emphasis ? 'text-base font-semibold' : 'text-sm text-neutral-700'}`}
+    >
+      <span>{label}</span>
+      <span data-testid={testId}>{formatMoney(amountInCents, currency)}</span>
+    </div>
+  );
+}
+
+/** The four breakdown lines of {@link SummaryBackdrop}, split out to keep that component short. */
+function BreakdownList({ breakdown }: { breakdown: AmountBreakdownDto }) {
+  return (
+    <>
+      <BreakdownRow
+        label={t.summary.productAmountLabel}
+        amountInCents={breakdown.productAmountInCents}
+        currency={breakdown.currency}
+        testId={TEST_IDS.summaryBackdrop.productAmount}
+      />
+      <BreakdownRow
+        label={t.summary.baseFeeLabel}
+        amountInCents={breakdown.baseFeeInCents}
+        currency={breakdown.currency}
+        testId={TEST_IDS.summaryBackdrop.baseFee}
+      />
+      <BreakdownRow
+        label={t.summary.deliveryFeeLabel}
+        amountInCents={breakdown.deliveryFeeInCents}
+        currency={breakdown.currency}
+        testId={TEST_IDS.summaryBackdrop.deliveryFee}
+      />
+      <hr className="border-neutral-200" />
+      <BreakdownRow
+        label={t.summary.totalLabel}
+        amountInCents={breakdown.totalInCents}
+        currency={breakdown.currency}
+        testId={TEST_IDS.summaryBackdrop.total}
+        emphasis
+      />
+    </>
+  );
+}
+
+/**
+ * Screen 3: the price breakdown and the button that actually charges the card.
+ *
+ * Everything the charge needs — the card token and the gateway's acceptance
+ * tokens — was already produced while the buyer was still on the form; this
+ * screen only has to send it on to `POST /checkout/:id/pay`.
+ */
+function SummaryBackdrop() {
+  const dispatch = useDispatch();
+  const {
+    transactionId,
+    breakdown,
+    cardToken,
+    acceptanceToken,
+    acceptPersonalAuthToken,
+    payIdempotencyKey,
+    cardMeta,
+    errorMessage,
+  } = useSelector((state: RootState) => state.checkout);
+  const { usePayCheckoutMutation } = useCheckoutApi();
+  const [payCheckout, { isLoading }] = usePayCheckoutMutation();
+
+  if (breakdown === null || transactionId === null) return null;
+
+  const canPay =
+    cardToken !== null &&
+    acceptanceToken !== null &&
+    acceptPersonalAuthToken !== null &&
+    payIdempotencyKey !== null &&
+    cardMeta !== null;
+
+  const onPay = async () => {
+    if (!canPay) return;
+
+    try {
+      const result = await payCheckout({
+        transactionId,
+        idempotencyKey: payIdempotencyKey,
+        body: {
+          cardToken,
+          acceptanceToken,
+          acceptPersonalAuthToken,
+          installments: SINGLE_INSTALLMENT,
+          cardBrand: cardMeta.brand,
+          cardLastFour: cardMeta.lastFour,
+        },
+      }).unwrap();
+
+      dispatch(paymentSucceeded({ status: result.status, failureReason: result.failureReason }));
+    } catch {
+      dispatch(checkoutFailed(t.summary.genericError));
+    }
+  };
+
+  return (
+    <Modal title={t.summary.title} onClose={() => dispatch(checkoutClosed())}>
+      <div data-testid={TEST_IDS.summaryBackdrop.root} className="flex flex-col gap-3">
+        <BreakdownList breakdown={breakdown} />
+
+        {errorMessage !== null && <p className="text-sm text-red-600">{errorMessage}</p>}
+
+        <button
+          type="button"
+          data-testid={TEST_IDS.summaryBackdrop.payButton}
+          onClick={() => void onPay()}
+          disabled={isLoading || !canPay}
+          className="mt-2 w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+        >
+          {isLoading ? t.summary.paying : t.summary.payButton}
+        </button>
+      </div>
     </Modal>
   );
 }
@@ -351,13 +519,74 @@ function toCheckoutRequestBody(productId: string, quantity: number, values: Chec
   };
 }
 
+/**
+ * Tokenises the card, then opens the checkout — everything Screen 2's submit
+ * button needs to hand off to the summary screen, split out so the component
+ * itself only has to call this once and dispatch its result.
+ */
+async function openTokenizedCheckout({
+  productId,
+  quantity,
+  idempotencyKey,
+  values,
+  brand,
+  apiBaseUrl,
+  fetchAcceptanceTokens,
+  createCheckout,
+}: {
+  productId: string;
+  quantity: number;
+  idempotencyKey: string;
+  values: CheckoutFormValues;
+  brand: ReturnType<typeof detectCardBrand>;
+  apiBaseUrl: string;
+  fetchAcceptanceTokens: () => { unwrap: () => Promise<AcceptanceTokensDto> };
+  createCheckout: (args: {
+    idempotencyKey: string;
+    body: ReturnType<typeof toCheckoutRequestBody>;
+  }) => { unwrap: () => Promise<CheckoutCreatedDto> };
+}) {
+  const [expMonth, expYear] = values.expiry.split('/');
+  if (expMonth === undefined || expYear === undefined) {
+    throw new Error('The expiry field was not validated before submit.');
+  }
+
+  const acceptanceTokens = await fetchAcceptanceTokens().unwrap();
+  const tokenizationUrl = resolveTokenizationUrl(acceptanceTokens.tokenizationUrl, apiBaseUrl);
+  const tokenizedCard = await tokenizeCard(tokenizationUrl, acceptanceTokens.publicKey, {
+    cardNumber: onlyDigits(values.cardNumber),
+    cvc: values.cvc,
+    expMonth,
+    expYear,
+    cardHolder: values.cardHolder,
+  });
+
+  const response = await createCheckout({
+    idempotencyKey,
+    body: toCheckoutRequestBody(productId, quantity, values),
+  }).unwrap();
+
+  return {
+    transactionId: response.transactionId,
+    reference: response.reference,
+    breakdown: response.breakdown,
+    cardMeta: { brand, lastFour: tokenizedCard.lastFour },
+    cardToken: tokenizedCard.token,
+    acceptanceToken: acceptanceTokens.acceptance.token,
+    acceptPersonalAuthToken: acceptanceTokens.personalDataAuthorization.token,
+    payIdempotencyKey: crypto.randomUUID(),
+  };
+}
+
 function CheckoutModal() {
   const dispatch = useDispatch();
   const { productId, quantity, idempotencyKey, errorMessage } = useSelector(
     (state: RootState) => state.checkout,
   );
-  const { useCreateCheckoutMutation } = useCheckoutApi();
+  const { useCreateCheckoutMutation, useLazyGetAcceptanceTokensQuery } = useCheckoutApi();
   const [createCheckout, { isLoading }] = useCreateCheckoutMutation();
+  const [fetchAcceptanceTokens] = useLazyGetAcceptanceTokensQuery();
+  const config = useConfig();
 
   const methods = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
@@ -369,22 +598,19 @@ function CheckoutModal() {
   const onSubmit = async (values: CheckoutFormValues) => {
     if (productId === null || idempotencyKey === null) return;
 
-    const digits = onlyDigits(values.cardNumber);
-
     try {
-      const response = await createCheckout({
+      const payload = await openTokenizedCheckout({
+        productId,
+        quantity,
         idempotencyKey,
-        body: toCheckoutRequestBody(productId, quantity, values),
-      }).unwrap();
+        values,
+        brand,
+        apiBaseUrl: config.apiBaseUrl,
+        fetchAcceptanceTokens,
+        createCheckout,
+      });
 
-      dispatch(
-        checkoutSucceeded({
-          transactionId: response.transactionId,
-          reference: response.reference,
-          breakdown: response.breakdown,
-          cardMeta: { brand, lastFour: digits.slice(-4) },
-        }),
-      );
+      dispatch(checkoutSucceeded(payload));
     } catch {
       dispatch(checkoutFailed(t.checkout.genericError));
     }

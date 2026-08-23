@@ -84,6 +84,13 @@ export type PayCheckoutDto = z.infer<typeof payCheckoutSchema>;
  */
 export const acceptanceTokensSchema = z.object({
   publicKey: z.string().min(1),
+  /**
+   * Where the browser tokenises a card directly — an absolute URL for the real
+   * gateway, or a path relative to our own API when the backend runs in fake
+   * mode. The frontend resolves a relative value against its own configured API
+   * base URL before calling it.
+   */
+  tokenizationUrl: z.string().min(1),
   acceptance: z.object({
     token: z.string().min(1),
     permalink: z.string().url(),

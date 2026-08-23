@@ -21,4 +21,24 @@ export const handlers = [
       total: 2,
     }),
   ),
+  http.get(`*/${API_ROUTES.checkout.acceptanceTokens}`, () =>
+    HttpResponse.json({
+      publicKey: 'pub_test_key',
+      tokenizationUrl: '/api/v1/checkout/dev-tokenize',
+      acceptance: { token: 'acc_token', permalink: 'https://example.test/acceptance' },
+      personalDataAuthorization: {
+        token: 'auth_token',
+        permalink: 'https://example.test/data-auth',
+      },
+    }),
+  ),
+  http.post('*/checkout/dev-tokenize', async ({ request }) => {
+    const body = (await request.json()) as { number: string };
+    const lastFour = body.number.slice(-4);
+
+    return HttpResponse.json({
+      status: 'CREATED',
+      data: { id: `tok_fake_${lastFour}_test`, last_four: lastFour },
+    });
+  }),
 ];
