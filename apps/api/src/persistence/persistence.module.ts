@@ -4,7 +4,9 @@ import { Global, Module } from '@nestjs/common';
 
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { UNIT_OF_WORK } from '../shared/unit-of-work/unit-of-work.port';
+import { IDEMPOTENCY_KEY_REPOSITORY } from './idempotency-key.repository';
 import { buildMikroOrmConfig } from './mikro-orm.config';
+import { MikroIdempotencyKeyRepository } from './mikro-idempotency-key.repository';
 import { MikroUnitOfWork } from './mikro-unit-of-work';
 
 /**
@@ -39,7 +41,12 @@ import { MikroUnitOfWork } from './mikro-unit-of-work';
       useFactory: (orm: MikroORM) => new MikroUnitOfWork(orm),
       inject: [MikroORM],
     },
+    {
+      provide: IDEMPOTENCY_KEY_REPOSITORY,
+      useFactory: (orm: MikroORM) => new MikroIdempotencyKeyRepository(orm),
+      inject: [MikroORM],
+    },
   ],
-  exports: [UNIT_OF_WORK],
+  exports: [UNIT_OF_WORK, IDEMPOTENCY_KEY_REPOSITORY],
 })
 export class PersistenceModule {}

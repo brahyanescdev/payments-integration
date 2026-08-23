@@ -1,5 +1,10 @@
 import { okAsync, type ResultAsync } from 'neverthrow';
 
+import type {
+  ClaimOutcome,
+  IdempotencyKeyRepository,
+} from '../persistence/idempotency-key.repository';
+
 import type { DomainError } from '../shared/result/domain-error';
 import type { RepositoryRegistry, UnitOfWork } from '../shared/unit-of-work/unit-of-work.port';
 import type { Product } from '../modules/catalog/domain/product';
@@ -57,5 +62,64 @@ export class InMemoryProductRepository implements ProductRepository {
     this.products.set(product.id, product);
 
     return okAsync(undefined);
+  }
+}
+
+/**
+ * In-memory double for the idempotency ledger, mirroring the real repository's
+ * claim/complete/release contract without a database.
+ */
+export class InMemoryIdempotencyKeyRepository implements IdempotencyKeyRepository {
+  private readonly records = new Map<
+    string,
+    { endpoint: string; requestHash: string; status: number | null; body: unknown; createdAt: Date }
+  >();
+
+  private static readonly IN_FLIGHT_TIMEOUT_MS = 30_000;
+
+  async claim(
+    key: string,
+    endpoint: string,
+    requestHash: string,
+    now: Date,
+  ): Promise<ClaimOutcome> {
+    const existing = this.records.get(key);
+
+    if (existing === undefined) {
+      this.records.set(key, { endpoint, requestHash, status: null, body: null, createdAt: now });
+
+      return { kind: 'claimed' };
+    }
+
+    if (existing.requestHash !== requestHash) {
+      return { kind: 'conflict' };
+    }
+
+    if (existing.status !== null) {
+      return { kind: 'replay', status: existing.status, body: existing.body };
+    }
+
+    const ageMs = now.getTime() - existing.createdAt.getTime();
+
+    if (ageMs > InMemoryIdempotencyKeyRepository.IN_FLIGHT_TIMEOUT_MS) {
+      this.records.set(key, { endpoint, requestHash, status: null, body: null, createdAt: now });
+
+      return { kind: 'claimed' };
+    }
+
+    return { kind: 'in-progress' };
+  }
+
+  async complete(key: string, status: number, body: unknown): Promise<void> {
+    const existing = this.records.get(key);
+
+    if (existing !== undefined) {
+      existing.status = status;
+      existing.body = body;
+    }
+  }
+
+  async release(key: string): Promise<void> {
+    this.records.delete(key);
   }
 }

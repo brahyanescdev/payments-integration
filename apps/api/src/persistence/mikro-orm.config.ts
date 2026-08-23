@@ -10,6 +10,7 @@ import {
   StockMovementEntity,
   TransactionEntity,
 } from '../modules/checkout/infrastructure/persistence/checkout.entities';
+import { IdempotencyKeyEntity } from './idempotency-key.entity';
 import type { MikroOrmSettings } from './orm-settings';
 
 /** Migration folder, sibling of this module in both `src` and `dist`. */
@@ -22,6 +23,7 @@ export const ENTITIES = [
   TransactionEntity,
   DeliveryEntity,
   StockMovementEntity,
+  IdempotencyKeyEntity,
 ];
 
 /**
