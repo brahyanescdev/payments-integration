@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 
 import { renderWithProviders } from '../../testing/render';
 import { server } from '../../testing/msw/server';
+import { makeWebConfig } from '../../testing/config.fixture';
 import { t } from '../../i18n/es';
 import { CheckoutModalHost } from './CheckoutModal';
 
@@ -360,6 +361,63 @@ describe('CheckoutModal', () => {
 
       const state = store.getState() as { checkout: { step: string } };
       expect(state.checkout.step).toBe('idle');
+    });
+
+    describe('polling a still-PENDING charge', () => {
+      const FAST_POLLING_CONFIG = makeWebConfig({
+        transactionPolling: { intervalMs: 15, timeoutMs: 300 },
+      });
+
+      const transactionDto = (status: string) => ({
+        id: 'tx-1',
+        reference: 'TX-tx-1',
+        status,
+        breakdown: BREAKDOWN,
+        card: null,
+        failureReason: status === 'DECLINED' ? 'insufficient_funds' : null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      it('keeps polling GET /transactions/:id until the gateway settles it, then shows the result', async () => {
+        let callCount = 0;
+        server.use(
+          http.get('*/transactions/tx-1', () => {
+            callCount += 1;
+
+            return HttpResponse.json(transactionDto(callCount < 3 ? 'PENDING' : 'APPROVED'));
+          }),
+        );
+
+        renderWithProviders(<CheckoutModalHost />, {
+          preloadedState: { checkout: { ...RESULT_STATE.checkout, transactionStatus: 'PENDING' } },
+          config: FAST_POLLING_CONFIG,
+        });
+
+        expect(screen.getByText(t.result.pendingTitle)).toBeInTheDocument();
+
+        await waitFor(() => expect(screen.getByText(t.result.approvedTitle)).toBeInTheDocument(), {
+          timeout: 3000,
+        });
+        expect(callCount).toBeGreaterThanOrEqual(3);
+      });
+
+      it('falls back to a timeout message when the charge never resolves in time', async () => {
+        server.use(
+          http.get('*/transactions/tx-1', () => HttpResponse.json(transactionDto('PENDING'))),
+        );
+
+        renderWithProviders(<CheckoutModalHost />, {
+          preloadedState: { checkout: { ...RESULT_STATE.checkout, transactionStatus: 'PENDING' } },
+          config: FAST_POLLING_CONFIG,
+        });
+
+        await waitFor(() => expect(screen.getByText(t.result.timeoutBody)).toBeInTheDocument(), {
+          timeout: 3000,
+        });
+        // Still PENDING, not a failure — the buyer can come back later and poll again.
+        expect(screen.getByText(t.result.pendingTitle)).toBeInTheDocument();
+      });
     });
   });
 });
