@@ -13,7 +13,10 @@ import request from 'supertest';
 
 import { CLOCK } from '../clock/clock.port';
 import { FixedClock } from '../clock/clock.port';
-import { IDEMPOTENCY_KEY_REPOSITORY } from '../../persistence/idempotency-key.repository';
+import {
+  IDEMPOTENCY_KEY_REPOSITORY,
+  type IdempotencyKeyRepository,
+} from '../../persistence/idempotency-key.repository';
 import { InMemoryIdempotencyKeyRepository } from '../../testing/fakes';
 import { IdempotencyInterceptor } from './idempotency.interceptor';
 
@@ -33,7 +36,7 @@ class WidgetsController {
 @Global()
 @Module({})
 class TestIdempotencyModule {
-  static register(clock: FixedClock, repository: InMemoryIdempotencyKeyRepository) {
+  static register(clock: FixedClock, repository: IdempotencyKeyRepository) {
     return {
       module: TestIdempotencyModule,
       providers: [
@@ -151,6 +154,38 @@ describe('IdempotencyInterceptor', () => {
     expect(outcome.kind).toBe('claimed');
 
     await failingApp.close();
+  });
+
+  it('rejects with 409 when another request with the same key is still in flight', async () => {
+    // A dedicated double rather than real concurrency: two genuinely simultaneous
+    // requests can resolve to either "in-progress" or "replay" depending on
+    // timing (see the test below), which makes this exact branch unreliable to
+    // reach that way. Asserting it deterministically needs a repository that
+    // always reports the key as already claimed and still unanswered.
+    const inProgressRepository = {
+      claim: () => Promise.resolve({ kind: 'in-progress' as const }),
+      complete: () => Promise.resolve(),
+      release: () => Promise.resolve(),
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [TestIdempotencyModule.register(clock, inProgressRepository)],
+      controllers: [WidgetsController],
+      providers: [IdempotencyInterceptor],
+    }).compile();
+
+    const inProgressApp = moduleRef.createNestApplication();
+    await inProgressApp.init();
+
+    await request(inProgressApp.getHttpServer())
+      .post('/widgets')
+      .set(IDEMPOTENCY_KEY_HEADER, 'key-in-flight')
+      .send({ name: 'gizmo' })
+      .expect(409);
+
+    expect(callCount).toBe(0);
+
+    await inProgressApp.close();
   });
 
   it('lets exactly one of several concurrent requests with the same key run the handler', async () => {

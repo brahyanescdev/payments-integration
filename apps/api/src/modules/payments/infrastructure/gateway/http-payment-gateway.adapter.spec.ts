@@ -91,6 +91,17 @@ describe('HttpPaymentGatewayAdapter', () => {
       expect(error.kind).toBe('GatewayUnavailable');
       expect(error.message).toMatch(/network down/);
     });
+
+    it('falls back to a generic message when the rejection is not an Error', async () => {
+      global.fetch = jest.fn().mockRejectedValue('connection reset');
+
+      const error = (
+        await new HttpPaymentGatewayAdapter(SETTINGS).getAcceptanceTokens()
+      )._unsafeUnwrapErr();
+
+      expect(error.kind).toBe('GatewayUnavailable');
+      expect(error.message).toMatch(/unknown error/);
+    });
   });
 
   describe('chargeCard', () => {

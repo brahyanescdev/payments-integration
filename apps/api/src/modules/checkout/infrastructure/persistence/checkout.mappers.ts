@@ -6,7 +6,7 @@ import type { DomainError } from '../../../../shared/result/domain-error';
 import { AmountBreakdown } from '../../domain/amount-breakdown';
 import { Customer } from '../../domain/customer';
 import { Delivery } from '../../domain/delivery';
-import { StockMovement } from '../../domain/stock-movement';
+import type { StockMovement } from '../../domain/stock-movement';
 import { Transaction } from '../../domain/transaction';
 import {
   CustomerEntity,
@@ -155,19 +155,8 @@ export const deliveryMapper = {
   },
 };
 
+/** Ledger entries are never read back, only appended, so there is only a "new row" direction. */
 export const stockMovementMapper = {
-  toDomain(row: StockMovementEntity): StockMovement {
-    return StockMovement.rehydrate({
-      id: row.id,
-      productId: row.productId,
-      transactionId: row.transactionId,
-      type: row.type,
-      quantity: row.quantity,
-      createdAt: row.createdAt,
-    });
-  },
-
-  /** Ledger entries are never rewritten, so there is only a "new row" direction. */
   toNewRow(movement: StockMovement): StockMovementEntity {
     const snapshot = movement.toSnapshot();
     const row = new StockMovementEntity();

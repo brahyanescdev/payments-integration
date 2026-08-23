@@ -177,9 +177,9 @@ la tabla de cobertura por archivo.
 
 | Workspace          | Statements | Branches | Functions | Lines  |
 | ------------------ | ---------- | -------- | --------- | ------ |
-| `@payments/shared` | 90.90%     | 100%     | 100%      | 87.50% |
-| `@payments/api`    | 100%       | 100%     | 100%      | 100%   |
-| `@payments/web`    | 100%       | 100%     | 100%      | 100%   |
+| `@payments/shared` | 87.27%     | 100%     | 100%      | 97.05% |
+| `@payments/api`    | 98.21%     | 95.97%   | 98.49%    | 98.72% |
+| `@payments/web`    | 97.99%     | 88.54%   | 100%      | 99.64% |
 
 Playwright **no** cuenta para este porcentaje: son dos suites con propósitos
 distintos. Jest cubre unidades y contratos; Playwright prueba el sistema completo y
@@ -224,13 +224,13 @@ Si el PR ya está abierto, `pnpm pr:body --apply` actualiza su descripción en s
 
 ## Estado
 
-| Etapa | Alcance                                                         | Estado    |
-| ----- | --------------------------------------------------------------- | --------- |
-| 1     | Andamiaje, CI, gate de cobertura, harness de evidencia          | En curso  |
-| 2     | Núcleo de dominio, Unit of Work, ROP, MikroORM, contrato Zod    | Pendiente |
-| 3     | Catálogo de producto — `GET /products` + pantalla 1             | Pendiente |
-| 4     | Formulario de tarjeta y entrega — `POST /checkout` + pantalla 2 | Pendiente |
-| 5     | Resumen y cobro — `POST /checkout/:id/pay` + pantalla 3         | Pendiente |
-| 6     | Resultado y stock — webhook + pantallas 4 y 5                   | Pendiente |
-| 7     | Cierre de cobertura                                             | Pendiente |
-| 8     | Infraestructura AWS y despliegue                                | Pendiente |
+| Etapa | Alcance                                                         | Estado     |
+| ----- | --------------------------------------------------------------- | ---------- |
+| 1     | Andamiaje, CI, gate de cobertura, harness de evidencia          | Completado |
+| 2     | Núcleo de dominio, Unit of Work, ROP, MikroORM, contrato Zod    | Completado |
+| 3     | Catálogo de producto — `GET /products` + pantalla 1             | Completado |
+| 4     | Formulario de tarjeta y entrega — `POST /checkout` + pantalla 2 | Completado |
+| 5     | Resumen y cobro — `POST /checkout/:id/pay` + pantalla 3         | Completado |
+| 6     | Resultado y stock — webhook + pantallas 4 y 5                   | Completado |
+| 7     | Cierre de cobertura                                             | En curso   |
+| 8     | Infraestructura AWS y despliegue                                | Pendiente  |

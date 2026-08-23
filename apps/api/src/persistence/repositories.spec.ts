@@ -10,7 +10,7 @@ import { Transaction } from '../modules/checkout/domain/transaction';
 import { ProductEntity } from '../modules/catalog/infrastructure/persistence/product.entity';
 import { Email } from '../shared/domain/email';
 import type { RepositoryRegistry } from '../shared/unit-of-work/unit-of-work.port';
-import { FIXED_NOW, makeAddress, makeBreakdown } from '../testing/builders';
+import { FIXED_NOW, makeAddress, makeBreakdown, makeProduct } from '../testing/builders';
 import { openTestOrm } from '../testing/orm';
 import { MikroUnitOfWork } from './mikro-unit-of-work';
 
@@ -194,6 +194,18 @@ describe('MikroORM repositories', () => {
     const transaction = reloaded._unsafeUnwrap();
     expect(transaction?.status).toBe('APPROVED');
     expect(transaction?.card).toEqual({ brand: 'VISA', lastFour: '4242' });
+  });
+
+  it('inserts a brand-new product the first time it is saved, not just updates a tracked one', async () => {
+    const newProductId = randomUUID();
+    const product = makeProduct({ id: newProductId, sku: `NEW-${newProductId.slice(0, 8)}` });
+
+    await unitOfWork.run((repositories) => repositories.products.save(product));
+
+    const row = await orm.em.fork().findOneOrFail(ProductEntity, { id: newProductId });
+    expect(row.sku).toBe(product.toSnapshot().sku);
+
+    await orm.em.fork().nativeDelete(ProductEntity, { id: newProductId });
   });
 
   it('refuses a second ledger entry of the same kind for one transaction', async () => {
