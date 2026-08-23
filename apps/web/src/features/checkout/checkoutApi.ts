@@ -45,6 +45,9 @@ export function createCheckoutApi(baseUrl: string) {
           headers: { [IDEMPOTENCY_KEY_HEADER]: idempotencyKey },
         }),
       }),
+      getTransaction: builder.query<TransactionDto, string>({
+        query: (transactionId) => API_ROUTES.transactions.detail(transactionId),
+      }),
     }),
   });
 }

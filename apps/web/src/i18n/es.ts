@@ -69,6 +69,7 @@ export const t = {
     errorBody: 'Ocurrió un error con la pasarela de pagos. Intenta de nuevo más tarde.',
     pendingTitle: 'Procesando tu pago',
     pendingBody: 'Te avisaremos en cuanto se confirme.',
+    timeoutBody: 'Sigue en proceso. Vuelve más tarde para ver el resultado final.',
     backToProduct: 'Volver al producto',
   },
 } as const;

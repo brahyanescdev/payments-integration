@@ -6,7 +6,8 @@ import {
   type CheckoutCreatedDto,
   type TransactionStatusDto,
 } from '@payments/shared';
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { skipToken } from '@reduxjs/toolkit/query/react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Controller,
   FormProvider,
@@ -22,6 +23,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { Modal } from '../../components/Modal';
 import { useConfig } from '../../config/config.context';
+import { useCatalogApi } from '../catalog/catalog-api.context';
 import { t } from '../../i18n/es';
 import { formatMoney } from '../../shared/money';
 import { CardBrandBadge } from './CardBrandBadge';
@@ -79,26 +81,72 @@ const RESULT_COPY: Record<TransactionStatusDto, { title: string; body: string }>
   PENDING: { title: t.result.pendingTitle, body: t.result.pendingBody },
 };
 
-/** Screens 4–5: the final outcome of the charge. Polling an in-flight `PENDING` result is stage 6's concern. */
+/**
+ * Screens 4–5: the final outcome of the charge.
+ *
+ * A charge the gateway left `PENDING` is polled here — via `GET /transactions/:id`
+ * at the interval `webConfig` names — until either a terminal status arrives (the
+ * same `paymentSucceeded` action the synchronous pay response already dispatches)
+ * or the configured timeout passes, whichever comes first. The fake driver never
+ * actually produces this path (every sandbox test card resolves synchronously),
+ * so this only ever engages against the real gateway.
+ */
 function ResultPanel() {
   const dispatch = useDispatch();
-  const { reference, transactionStatus, failureReason } = useSelector(
+  const config = useConfig();
+  const { transactionId, reference, transactionStatus, failureReason } = useSelector(
     (state: RootState) => state.checkout,
   );
+  const { useGetTransactionQuery } = useCheckoutApi();
+  const catalogApi = useCatalogApi();
+  const [pollingTimedOut, setPollingTimedOut] = useState(false);
+  const isPending = transactionStatus === 'PENDING';
+
+  const { data: polled } = useGetTransactionQuery(
+    isPending && transactionId !== null ? transactionId : skipToken,
+    { pollingInterval: config.transactionPolling.intervalMs },
+  );
+
+  useEffect(() => {
+    if (polled !== undefined && polled.status !== 'PENDING') {
+      dispatch(paymentSucceeded({ status: polled.status, failureReason: polled.failureReason }));
+    }
+  }, [polled, dispatch]);
+
+  useEffect(() => {
+    if (!isPending) {
+      setPollingTimedOut(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => setPollingTimedOut(true), config.transactionPolling.timeoutMs);
+
+    return () => clearTimeout(timeout);
+  }, [isPending, config.transactionPolling.timeoutMs]);
+
   const copy = RESULT_COPY[transactionStatus ?? 'PENDING'];
+  const body = isPending && pollingTimedOut ? t.result.timeoutBody : copy.body;
+
+  const onClose = () => {
+    // The buyer is headed back to the catalogue: whatever this checkout just
+    // did to stock (committed or released) should be visible immediately,
+    // not stale until some unrelated refetch happens to occur.
+    dispatch(catalogApi.util.resetApiState());
+    dispatch(checkoutClosed());
+  };
 
   return (
-    <Modal title={copy.title} onClose={() => dispatch(checkoutClosed())}>
+    <Modal title={copy.title} onClose={onClose}>
       <div data-testid={TEST_IDS.resultPage.root}>
         <p data-testid={TEST_IDS.resultPage.status} className="text-sm text-neutral-700">
-          {copy.body}
+          {body}
         </p>
         {failureReason !== null && <p className="mt-2 text-xs text-neutral-500">{failureReason}</p>}
         {reference !== null && <p className="mt-2 text-xs text-neutral-500">{reference}</p>}
         <button
           type="button"
           data-testid={TEST_IDS.resultPage.backToProduct}
-          onClick={() => dispatch(checkoutClosed())}
+          onClick={onClose}
           className="mt-4 w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700"
         >
           {t.result.backToProduct}

@@ -12,6 +12,7 @@ import {
 } from '../modules/checkout/infrastructure/persistence/checkout.entities';
 import { IdempotencyKeyEntity } from './idempotency-key.entity';
 import type { MikroOrmSettings } from './orm-settings';
+import { WebhookEventEntity } from './webhook-event.entity';
 
 /** Migration folder, sibling of this module in both `src` and `dist`. */
 const MIGRATIONS_DIR = join(__dirname, 'migrations');
@@ -24,6 +25,7 @@ export const ENTITIES = [
   DeliveryEntity,
   StockMovementEntity,
   IdempotencyKeyEntity,
+  WebhookEventEntity,
 ];
 
 /**

@@ -11,7 +11,7 @@ import { ProductEntity } from '../../catalog/infrastructure/persistence/product.
 import { FixedClock } from '../../../shared/clock/clock.port';
 import { UuidGenerator } from '../../../shared/id/id-generator.port';
 import { makeAddress, makePricingRules } from '../../../testing/builders';
-import { openTestOrm } from '../../../testing/orm';
+import { cleanupCheckoutFixtures, openTestOrm } from '../../../testing/orm';
 import { PricingPolicy } from '../domain/pricing-policy';
 
 /**
@@ -92,12 +92,7 @@ describe('PayCheckoutUseCase (integration)', () => {
   });
 
   afterEach(async () => {
-    const em = orm.em.fork();
-    await em.nativeDelete('stock_movements', { product_id: productId });
-    await em.nativeDelete('deliveries', {});
-    await em.nativeDelete('transactions', { product_id: productId });
-    await em.nativeDelete('customers', {});
-    await em.nativeDelete(ProductEntity, { id: productId });
+    await cleanupCheckoutFixtures(orm, productId);
   });
 
   it('approves a card ending in 4242, exactly like the real sandbox', async () => {
