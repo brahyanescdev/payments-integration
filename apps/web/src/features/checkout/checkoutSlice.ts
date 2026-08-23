@@ -1,4 +1,4 @@
-import type { AmountBreakdownDto } from '@payments/shared';
+import type { AmountBreakdownDto, TransactionStatusDto } from '@payments/shared';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { CardBrand } from './card';
@@ -16,7 +16,7 @@ export interface CardMeta {
   readonly lastFour: string;
 }
 
-export type CheckoutStep = 'idle' | 'form' | 'awaiting-payment';
+export type CheckoutStep = 'idle' | 'form' | 'summary' | 'result';
 
 export interface CheckoutState {
   readonly step: CheckoutStep;
@@ -29,10 +29,23 @@ export interface CheckoutState {
    * idempotent on the server.
    */
   readonly idempotencyKey: string | null;
+  /** Same guarantee as {@link CheckoutState.idempotencyKey}, but for `POST /checkout/:id/pay` — a distinct key, since the two endpoints must not share one. */
+  readonly payIdempotencyKey: string | null;
   readonly cardMeta: CardMeta | null;
+  /**
+   * Single-use values from tokenising the card and accepting the gateway's
+   * terms, both produced while the buyer is still on the form. Safe to persist
+   * alongside everything else here: none of them can be turned back into the
+   * card number, and an unused one simply expires on the gateway's side.
+   */
+  readonly cardToken: string | null;
+  readonly acceptanceToken: string | null;
+  readonly acceptPersonalAuthToken: string | null;
   readonly transactionId: string | null;
   readonly reference: string | null;
   readonly breakdown: AmountBreakdownDto | null;
+  readonly transactionStatus: TransactionStatusDto | null;
+  readonly failureReason: string | null;
   readonly errorMessage: string | null;
 }
 
@@ -41,10 +54,16 @@ const initialState: CheckoutState = {
   productId: null,
   quantity: 1,
   idempotencyKey: null,
+  payIdempotencyKey: null,
   cardMeta: null,
+  cardToken: null,
+  acceptanceToken: null,
+  acceptPersonalAuthToken: null,
   transactionId: null,
   reference: null,
   breakdown: null,
+  transactionStatus: null,
+  failureReason: null,
   errorMessage: null,
 };
 
@@ -61,14 +80,21 @@ export const checkoutSlice = createSlice({
       state.productId = action.payload.productId;
       state.quantity = action.payload.quantity;
       state.idempotencyKey = action.payload.idempotencyKey;
+      state.payIdempotencyKey = null;
       state.cardMeta = null;
+      state.cardToken = null;
+      state.acceptanceToken = null;
+      state.acceptPersonalAuthToken = null;
       state.transactionId = null;
       state.reference = null;
       state.breakdown = null;
+      state.transactionStatus = null;
+      state.failureReason = null;
       state.errorMessage = null;
     },
     /** Cancels the in-progress attempt, discarding everything about it. */
     checkoutClosed: () => initialState,
+    /** Screen 2 submitted: the transaction is open and the card is tokenised. Moves to the summary. */
     checkoutSucceeded: (
       state,
       action: PayloadAction<{
@@ -76,22 +102,46 @@ export const checkoutSlice = createSlice({
         reference: string;
         breakdown: AmountBreakdownDto;
         cardMeta: CardMeta;
+        cardToken: string;
+        acceptanceToken: string;
+        acceptPersonalAuthToken: string;
+        payIdempotencyKey: string;
       }>,
     ) => {
-      state.step = 'awaiting-payment';
+      state.step = 'summary';
       state.transactionId = action.payload.transactionId;
       state.reference = action.payload.reference;
       state.breakdown = action.payload.breakdown;
       state.cardMeta = action.payload.cardMeta;
+      state.cardToken = action.payload.cardToken;
+      state.acceptanceToken = action.payload.acceptanceToken;
+      state.acceptPersonalAuthToken = action.payload.acceptPersonalAuthToken;
+      state.payIdempotencyKey = action.payload.payIdempotencyKey;
       state.errorMessage = null;
     },
+    /** Reported by either screen: opening the checkout or charging the card. Leaves the step as-is, so the buyer can retry. */
     checkoutFailed: (state, action: PayloadAction<string>) => {
       state.errorMessage = action.payload;
+    },
+    /** The gateway resolved the charge (synchronously, or the caller already polled it to a final state). */
+    paymentSucceeded: (
+      state,
+      action: PayloadAction<{ status: TransactionStatusDto; failureReason: string | null }>,
+    ) => {
+      state.step = 'result';
+      state.transactionStatus = action.payload.status;
+      state.failureReason = action.payload.failureReason;
+      state.errorMessage = null;
     },
   },
 });
 
-export const { checkoutOpened, checkoutClosed, checkoutSucceeded, checkoutFailed } =
-  checkoutSlice.actions;
+export const {
+  checkoutOpened,
+  checkoutClosed,
+  checkoutSucceeded,
+  checkoutFailed,
+  paymentSucceeded,
+} = checkoutSlice.actions;
 
 export default checkoutSlice.reducer;

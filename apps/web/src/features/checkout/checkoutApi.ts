@@ -1,8 +1,11 @@
 import {
   API_ROUTES,
   IDEMPOTENCY_KEY_HEADER,
+  type AcceptanceTokensDto,
   type CheckoutCreatedDto,
   type CreateCheckoutDto,
+  type PayCheckoutDto,
+  type TransactionDto,
 } from '@payments/shared';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
@@ -23,6 +26,20 @@ export function createCheckoutApi(baseUrl: string) {
       >({
         query: ({ body, idempotencyKey }) => ({
           url: API_ROUTES.checkout.create,
+          method: 'POST',
+          body,
+          headers: { [IDEMPOTENCY_KEY_HEADER]: idempotencyKey },
+        }),
+      }),
+      getAcceptanceTokens: builder.query<AcceptanceTokensDto, void>({
+        query: () => API_ROUTES.checkout.acceptanceTokens,
+      }),
+      payCheckout: builder.mutation<
+        TransactionDto,
+        { transactionId: string; body: PayCheckoutDto; idempotencyKey: string }
+      >({
+        query: ({ transactionId, body, idempotencyKey }) => ({
+          url: API_ROUTES.checkout.pay(transactionId),
           method: 'POST',
           body,
           headers: { [IDEMPOTENCY_KEY_HEADER]: idempotencyKey },
