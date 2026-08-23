@@ -83,6 +83,12 @@ export class MikroCustomerRepository implements CustomerRepository {
     ).andThen((row) => (row === null ? ok(null) : this.track(row)));
   }
 
+  findById(customerId: string): ResultAsync<Customer | null, DomainError> {
+    return query('customers.findById', () =>
+      this.em.findOne(CustomerEntity, { id: customerId }),
+    ).andThen((row) => (row === null ? ok(null) : this.track(row)));
+  }
+
   save(customer: Customer): ResultAsync<void, DomainError> {
     const tracked = this.rowsById.get(customer.id);
 

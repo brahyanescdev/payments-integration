@@ -17,13 +17,18 @@ import {
   GET_ACCEPTANCE_TOKENS_USE_CASE,
   GetAcceptanceTokensUseCase,
 } from './application/get-acceptance-tokens.use-case';
+import { PAY_CHECKOUT_USE_CASE, PayCheckoutUseCase } from './application/pay-checkout.use-case';
+import {
+  SETTLE_TRANSACTION_USE_CASE,
+  SettleTransactionUseCase,
+} from './application/settle-transaction.use-case';
 import { PricingPolicy } from './domain/pricing-policy';
 import { CheckoutController } from './infrastructure/http/checkout.controller';
 
 /** Injection token for the {@link PricingPolicy} instance, built from configuration. */
 const PRICING_POLICY = Symbol('PRICING_POLICY');
 
-/** Wiring for the checkout slice: opening a transaction and reading the gateway's terms. */
+/** Wiring for the checkout slice: opening a transaction, paying it, and reading the gateway's terms. */
 @Module({
   imports: [PaymentsModule],
   controllers: [CheckoutController],
@@ -55,6 +60,21 @@ const PRICING_POLICY = Symbol('PRICING_POLICY');
       provide: GET_ACCEPTANCE_TOKENS_USE_CASE,
       useFactory: (gateway: PaymentGatewayPort) => new GetAcceptanceTokensUseCase(gateway),
       inject: [PAYMENT_GATEWAY],
+    },
+    {
+      provide: SETTLE_TRANSACTION_USE_CASE,
+      useFactory: (clock: Clock, ids: IdGenerator) => new SettleTransactionUseCase(clock, ids),
+      inject: [CLOCK, ID_GENERATOR],
+    },
+    {
+      provide: PAY_CHECKOUT_USE_CASE,
+      useFactory: (
+        unitOfWork: UnitOfWork,
+        gateway: PaymentGatewayPort,
+        settleTransaction: SettleTransactionUseCase,
+        clock: Clock,
+      ) => new PayCheckoutUseCase(unitOfWork, gateway, settleTransaction, clock),
+      inject: [UNIT_OF_WORK, PAYMENT_GATEWAY, SETTLE_TRANSACTION_USE_CASE, CLOCK],
     },
   ],
 })

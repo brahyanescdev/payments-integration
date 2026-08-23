@@ -21,6 +21,8 @@ export interface CustomerRepository {
   /** Email is the natural key: the same buyer must not become two rows. */
   findByEmail(email: Email): ResultAsync<Customer | null, DomainError>;
 
+  findById(customerId: string): ResultAsync<Customer | null, DomainError>;
+
   save(customer: Customer): ResultAsync<void, DomainError>;
 }
 
