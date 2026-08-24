@@ -25,6 +25,22 @@ test.describe('Formulario de tarjeta y entrega', () => {
     await captureEvidence(page, testInfo, 'Modal de tarjeta con marca detectada');
   });
 
+  test('mantiene el foco en el campo mientras se digita el número tecla por tecla', async ({
+    page,
+  }) => {
+    // `.fill()` sets the value in one shot and would never have caught this: the
+    // regression only shows up on the real per-keystroke input/change cycle,
+    // which is exactly what `pressSequentially` drives.
+    await openCheckoutModal(page, PRODUCT_NAME);
+    const field = page.getByTestId(TEST_IDS.checkoutModal.cardNumber);
+
+    await field.click();
+    await field.pressSequentially('4242424242424242', { delay: 20 });
+
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue('4242 4242 4242 4242');
+  });
+
   test('rechaza un número de tarjeta inválido antes de llamar a la API', async ({ page }) => {
     await openCheckoutModal(page, PRODUCT_NAME);
     await fillValidForm(page);
