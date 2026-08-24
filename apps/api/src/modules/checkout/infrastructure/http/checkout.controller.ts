@@ -18,6 +18,7 @@ import {
   type TransactionDto,
 } from '@payments/shared';
 
+import { APP_CONFIG, type AppConfig } from '../../../../config/app.config';
 import { unwrapOrThrow } from '../../../../shared/http/domain-error.http';
 import { IdempotencyInterceptor } from '../../../../shared/idempotency/idempotency.interceptor';
 import {
@@ -48,6 +49,7 @@ export class CheckoutController {
     @Inject(GET_ACCEPTANCE_TOKENS_USE_CASE)
     private readonly getAcceptanceTokens: GetAcceptanceTokensUseCase,
     @Inject(PAY_CHECKOUT_USE_CASE) private readonly payCheckout: PayCheckoutUseCase,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Post()
@@ -99,6 +101,6 @@ export class CheckoutController {
   ): Promise<TransactionDto> {
     const result = await this.payCheckout.execute(transactionId, body);
 
-    return toTransactionDto(unwrapOrThrow(result));
+    return toTransactionDto(unwrapOrThrow(result), this.config.psp.driver);
   }
 }

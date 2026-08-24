@@ -150,7 +150,14 @@ pnpm --filter @payments/api dev     # API en http://localhost:3000/api/v1
 pnpm --filter @payments/web dev     # SPA en http://localhost:5173
 ```
 
-Documentación interactiva de la API (Swagger UI): `http://localhost:3000/api/v1/docs`.
+Documentación interactiva de la API (Swagger UI, con el servidor local corriendo):
+`http://localhost:3000/api/v1/docs`.
+
+Sin necesidad de levantar nada: el spec OpenAPI está exportado en
+[`docs/api/openapi.json`](docs/api/openapi.json), y la colección de Postman lista
+para importar en [`docs/api/postman-collection.json`](docs/api/postman-collection.json)
+(generada directamente desde ese spec — importarla en Postman reconstruye cada
+endpoint con su esquema de request/response).
 
 ## Configuración
 
@@ -232,5 +239,5 @@ Si el PR ya está abierto, `pnpm pr:body --apply` actualiza su descripción en s
 | 4     | Formulario de tarjeta y entrega — `POST /checkout` + pantalla 2 | Completado |
 | 5     | Resumen y cobro — `POST /checkout/:id/pay` + pantalla 3         | Completado |
 | 6     | Resultado y stock — webhook + pantallas 4 y 5                   | Completado |
-| 7     | Cierre de cobertura                                             | En curso   |
+| 7     | Cierre de cobertura                                             | Completado |
 | 8     | Infraestructura AWS y despliegue                                | Pendiente  |

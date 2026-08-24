@@ -1,0 +1,313 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "0.1.0"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Liveness probe used by the load balancer and the E2E harness",
+        "tags": ["health"]
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "operationId": "ProductsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of products."
+          }
+        },
+        "summary": "Lists the catalogue with stock, paginated",
+        "tags": ["products"]
+      }
+    },
+    "/api/v1/products/{id}": {
+      "get": {
+        "operationId": "ProductsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested product."
+          }
+        },
+        "summary": "Reads a single product by id",
+        "tags": ["products"]
+      }
+    },
+    "/api/v1/checkout": {
+      "post": {
+        "operationId": "CheckoutController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCheckoutRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The transaction was opened."
+          }
+        },
+        "summary": "Opens a PENDING transaction, reserving stock. Requires an Idempotency-Key header.",
+        "tags": ["checkout"]
+      }
+    },
+    "/api/v1/checkout/acceptance-tokens": {
+      "get": {
+        "operationId": "CheckoutController_acceptanceTokens",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Acceptance tokens the buyer must agree to before paying."
+          }
+        },
+        "summary": "Proxies the gateway's terms and public key",
+        "tags": ["checkout"]
+      }
+    },
+    "/api/v1/checkout/{id}/pay": {
+      "post": {
+        "operationId": "CheckoutController_pay",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayCheckoutRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The transaction after submitting the charge."
+          }
+        },
+        "summary": "Submits the charge for an open transaction. Requires an Idempotency-Key header.",
+        "tags": ["checkout"]
+      }
+    },
+    "/api/v1/transactions/{id}": {
+      "get": {
+        "operationId": "TransactionsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested transaction."
+          }
+        },
+        "summary": "Reads a single transaction by id, for polling its status",
+        "tags": ["transactions"]
+      }
+    }
+  },
+  "info": {
+    "title": "Payments checkout API",
+    "description": "Card checkout onboarding: catalog, transactions, customers and deliveries.",
+    "version": "0.0.0-dev",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "CustomerInputDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "legalId": {
+            "type": "string"
+          },
+          "legalIdType": {
+            "type": "string",
+            "enum": ["CC", "CE", "NIT", "PP"]
+          }
+        },
+        "required": ["email", "fullName", "phone", "legalId", "legalIdType"]
+      },
+      "DeliveryInputDto": {
+        "type": "object",
+        "properties": {
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipientName",
+          "phone",
+          "addressLine1",
+          "city",
+          "region",
+          "country",
+          "postalCode"
+        ]
+      },
+      "CreateCheckoutRequestDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerInputDto"
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/DeliveryInputDto"
+          }
+        },
+        "required": ["productId", "quantity", "customer", "delivery"]
+      },
+      "PayCheckoutRequestDto": {
+        "type": "object",
+        "properties": {
+          "cardToken": {
+            "type": "string"
+          },
+          "acceptanceToken": {
+            "type": "string"
+          },
+          "acceptPersonalAuthToken": {
+            "type": "string"
+          },
+          "installments": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 36
+          },
+          "cardBrand": {
+            "type": "string"
+          },
+          "cardLastFour": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cardToken",
+          "acceptanceToken",
+          "acceptPersonalAuthToken",
+          "installments",
+          "cardBrand",
+          "cardLastFour"
+        ]
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import type { AmountBreakdownDto, TransactionStatusDto } from '@payments/shared';
+import type { AmountBreakdownDto, GatewayModeDto, TransactionStatusDto } from '@payments/shared';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { CardBrand } from './card';
@@ -46,6 +46,8 @@ export interface CheckoutState {
   readonly breakdown: AmountBreakdownDto | null;
   readonly transactionStatus: TransactionStatusDto | null;
   readonly failureReason: string | null;
+  /** Which gateway adapter actually processed the charge — the one honest way to tell a `fake`-driver test apart from a real sandbox hit. */
+  readonly gatewayMode: GatewayModeDto | null;
   readonly errorMessage: string | null;
 }
 
@@ -64,6 +66,7 @@ const initialState: CheckoutState = {
   breakdown: null,
   transactionStatus: null,
   failureReason: null,
+  gatewayMode: null,
   errorMessage: null,
 };
 
@@ -90,6 +93,7 @@ export const checkoutSlice = createSlice({
       state.breakdown = null;
       state.transactionStatus = null;
       state.failureReason = null;
+      state.gatewayMode = null;
       state.errorMessage = null;
     },
     /** Cancels the in-progress attempt, discarding everything about it. */
@@ -126,11 +130,16 @@ export const checkoutSlice = createSlice({
     /** The gateway resolved the charge (synchronously, or the caller already polled it to a final state). */
     paymentSucceeded: (
       state,
-      action: PayloadAction<{ status: TransactionStatusDto; failureReason: string | null }>,
+      action: PayloadAction<{
+        status: TransactionStatusDto;
+        failureReason: string | null;
+        gatewayMode: GatewayModeDto;
+      }>,
     ) => {
       state.step = 'result';
       state.transactionStatus = action.payload.status;
       state.failureReason = action.payload.failureReason;
+      state.gatewayMode = action.payload.gatewayMode;
       state.errorMessage = null;
     },
   },

@@ -1,0 +1,562 @@
+{
+  "item": [
+    {
+      "name": "api",
+      "description": "",
+      "item": [
+        {
+          "name": "v1",
+          "description": "",
+          "item": [
+            {
+              "name": "health",
+              "description": "",
+              "item": [
+                {
+                  "id": "7ce83fd4-a810-49ef-857f-2b38cc39d0c1",
+                  "name": "Liveness probe used by the load balancer and the E2E harness",
+                  "request": {
+                    "name": "Liveness probe used by the load balancer and the E2E harness",
+                    "description": {},
+                    "url": {
+                      "path": ["api", "v1", "health"],
+                      "host": ["{{baseUrl}}"],
+                      "query": [],
+                      "variable": []
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "method": "GET",
+                    "body": {},
+                    "auth": null
+                  },
+                  "response": [
+                    {
+                      "id": "35c7b8e7-9d7b-4288-a12a-91ccd9e2448a",
+                      "name": "200",
+                      "originalRequest": {
+                        "url": {
+                          "path": ["api", "v1", "health"],
+                          "host": ["{{baseUrl}}"],
+                          "query": [],
+                          "variable": []
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "method": "GET",
+                        "body": {}
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "body": "{\n  \"status\": \"<string>\",\n  \"timestamp\": \"<dateTime>\",\n  \"version\": \"<string>\"\n}",
+                      "cookie": [],
+                      "_postman_previewlanguage": "json"
+                    }
+                  ],
+                  "event": [],
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  }
+                }
+              ]
+            },
+            {
+              "name": "products",
+              "description": "",
+              "item": [
+                {
+                  "id": "86c0a15b-8edc-42f2-81b0-0a409ddeebfa",
+                  "name": "Lists the catalogue with stock, paginated",
+                  "request": {
+                    "name": "Lists the catalogue with stock, paginated",
+                    "description": {},
+                    "url": {
+                      "path": ["api", "v1", "products"],
+                      "host": ["{{baseUrl}}"],
+                      "query": [
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "pageSize",
+                          "value": "<number>"
+                        }
+                      ],
+                      "variable": []
+                    },
+                    "method": "GET",
+                    "body": {},
+                    "auth": null
+                  },
+                  "response": [
+                    {
+                      "id": "35cea8cb-40a0-48f7-b385-1c0399402f27",
+                      "name": "A page of products.",
+                      "originalRequest": {
+                        "url": {
+                          "path": ["api", "v1", "products"],
+                          "host": ["{{baseUrl}}"],
+                          "query": [
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "page",
+                              "value": "1"
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "pageSize",
+                              "value": "<number>"
+                            }
+                          ],
+                          "variable": []
+                        },
+                        "method": "GET",
+                        "body": {}
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "header": [],
+                      "cookie": [],
+                      "_postman_previewlanguage": "text"
+                    }
+                  ],
+                  "event": [],
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  }
+                },
+                {
+                  "name": "{id}",
+                  "description": "",
+                  "item": [
+                    {
+                      "id": "456e4ca7-fd34-4a5f-8c62-e5bfb0d433ea",
+                      "name": "Reads a single product by id",
+                      "request": {
+                        "name": "Reads a single product by id",
+                        "description": {},
+                        "url": {
+                          "path": ["api", "v1", "products", ":id"],
+                          "host": ["{{baseUrl}}"],
+                          "query": [],
+                          "variable": [
+                            {
+                              "type": "any",
+                              "value": "<uuid>",
+                              "key": "id",
+                              "disabled": false,
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              }
+                            }
+                          ]
+                        },
+                        "method": "GET",
+                        "body": {},
+                        "auth": null
+                      },
+                      "response": [
+                        {
+                          "id": "3d7ff6c5-d36a-419a-8942-d599d096f880",
+                          "name": "The requested product.",
+                          "originalRequest": {
+                            "url": {
+                              "path": ["api", "v1", "products", ":id"],
+                              "host": ["{{baseUrl}}"],
+                              "query": [],
+                              "variable": [
+                                {
+                                  "disabled": false,
+                                  "description": {
+                                    "content": "(Required) ",
+                                    "type": "text/plain"
+                                  },
+                                  "type": "any",
+                                  "value": "<uuid>",
+                                  "key": "id"
+                                }
+                              ]
+                            },
+                            "method": "GET",
+                            "body": {}
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "header": [],
+                          "cookie": [],
+                          "_postman_previewlanguage": "text"
+                        }
+                      ],
+                      "event": [],
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "checkout",
+              "description": "",
+              "item": [
+                {
+                  "id": "a4820857-a6b5-488a-8184-64dcb4438bb3",
+                  "name": "Opens a PENDING transaction, reserving stock. Requires an Idempotency-Key header.",
+                  "request": {
+                    "name": "Opens a PENDING transaction, reserving stock. Requires an Idempotency-Key header.",
+                    "description": {},
+                    "url": {
+                      "path": ["api", "v1", "checkout"],
+                      "host": ["{{baseUrl}}"],
+                      "query": [],
+                      "variable": []
+                    },
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "method": "POST",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"productId\": \"<string>\",\n  \"quantity\": \"<number>\",\n  \"customer\": {\n    \"email\": \"<string>\",\n    \"fullName\": \"<string>\",\n    \"phone\": \"<string>\",\n    \"legalId\": \"<string>\",\n    \"legalIdType\": \"CC\"\n  },\n  \"delivery\": {\n    \"recipientName\": \"<string>\",\n    \"phone\": \"<string>\",\n    \"addressLine1\": \"<string>\",\n    \"city\": \"<string>\",\n    \"region\": \"<string>\",\n    \"country\": \"<string>\",\n    \"postalCode\": \"<string>\",\n    \"addressLine2\": \"<string>\"\n  }\n}",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "auth": null
+                  },
+                  "response": [
+                    {
+                      "id": "b3bbd90a-c912-418f-8c2d-e40666c8e6cb",
+                      "name": "The transaction was opened.",
+                      "originalRequest": {
+                        "url": {
+                          "path": ["api", "v1", "checkout"],
+                          "host": ["{{baseUrl}}"],
+                          "query": [],
+                          "variable": []
+                        },
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "method": "POST",
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"productId\": \"<string>\",\n  \"quantity\": \"<number>\",\n  \"customer\": {\n    \"email\": \"<string>\",\n    \"fullName\": \"<string>\",\n    \"phone\": \"<string>\",\n    \"legalId\": \"<string>\",\n    \"legalIdType\": \"CC\"\n  },\n  \"delivery\": {\n    \"recipientName\": \"<string>\",\n    \"phone\": \"<string>\",\n    \"addressLine1\": \"<string>\",\n    \"city\": \"<string>\",\n    \"region\": \"<string>\",\n    \"country\": \"<string>\",\n    \"postalCode\": \"<string>\",\n    \"addressLine2\": \"<string>\"\n  }\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "header": [],
+                      "cookie": [],
+                      "_postman_previewlanguage": "text"
+                    }
+                  ],
+                  "event": [],
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  }
+                },
+                {
+                  "name": "acceptance-tokens",
+                  "description": "",
+                  "item": [
+                    {
+                      "id": "2901f318-1bcb-4f12-be52-616a555fa5ff",
+                      "name": "Proxies the gateway's terms and public key",
+                      "request": {
+                        "name": "Proxies the gateway's terms and public key",
+                        "description": {},
+                        "url": {
+                          "path": ["api", "v1", "checkout", "acceptance-tokens"],
+                          "host": ["{{baseUrl}}"],
+                          "query": [],
+                          "variable": []
+                        },
+                        "method": "GET",
+                        "body": {},
+                        "auth": null
+                      },
+                      "response": [
+                        {
+                          "id": "94cd2f73-2e84-4dba-9528-31f8601e5667",
+                          "name": "Acceptance tokens the buyer must agree to before paying.",
+                          "originalRequest": {
+                            "url": {
+                              "path": ["api", "v1", "checkout", "acceptance-tokens"],
+                              "host": ["{{baseUrl}}"],
+                              "query": [],
+                              "variable": []
+                            },
+                            "method": "GET",
+                            "body": {}
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "header": [],
+                          "cookie": [],
+                          "_postman_previewlanguage": "text"
+                        }
+                      ],
+                      "event": [],
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "{id}",
+                  "description": "",
+                  "item": [
+                    {
+                      "name": "pay",
+                      "description": "",
+                      "item": [
+                        {
+                          "id": "8e389747-3bf0-4584-9b89-5e64d8172407",
+                          "name": "Submits the charge for an open transaction. Requires an Idempotency-Key header.",
+                          "request": {
+                            "name": "Submits the charge for an open transaction. Requires an Idempotency-Key header.",
+                            "description": {},
+                            "url": {
+                              "path": ["api", "v1", "checkout", ":id", "pay"],
+                              "host": ["{{baseUrl}}"],
+                              "query": [],
+                              "variable": [
+                                {
+                                  "type": "any",
+                                  "value": "<string>",
+                                  "key": "id",
+                                  "disabled": false,
+                                  "description": {
+                                    "content": "(Required) ",
+                                    "type": "text/plain"
+                                  }
+                                }
+                              ]
+                            },
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              }
+                            ],
+                            "method": "POST",
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"cardToken\": \"<string>\",\n  \"acceptanceToken\": \"<string>\",\n  \"acceptPersonalAuthToken\": \"<string>\",\n  \"installments\": \"<number>\",\n  \"cardBrand\": \"<string>\",\n  \"cardLastFour\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "auth": null
+                          },
+                          "response": [
+                            {
+                              "id": "3889696f-a69f-4b7d-a143-bb55b5738249",
+                              "name": "The transaction after submitting the charge.",
+                              "originalRequest": {
+                                "url": {
+                                  "path": ["api", "v1", "checkout", ":id", "pay"],
+                                  "host": ["{{baseUrl}}"],
+                                  "query": [],
+                                  "variable": [
+                                    {
+                                      "disabled": false,
+                                      "description": {
+                                        "content": "(Required) ",
+                                        "type": "text/plain"
+                                      },
+                                      "type": "any",
+                                      "value": "<string>",
+                                      "key": "id"
+                                    }
+                                  ]
+                                },
+                                "header": [
+                                  {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                  }
+                                ],
+                                "method": "POST",
+                                "body": {
+                                  "mode": "raw",
+                                  "raw": "{\n  \"cardToken\": \"<string>\",\n  \"acceptanceToken\": \"<string>\",\n  \"acceptPersonalAuthToken\": \"<string>\",\n  \"installments\": \"<number>\",\n  \"cardBrand\": \"<string>\",\n  \"cardLastFour\": \"<string>\"\n}",
+                                  "options": {
+                                    "raw": {
+                                      "headerFamily": "json",
+                                      "language": "json"
+                                    }
+                                  }
+                                }
+                              },
+                              "status": "OK",
+                              "code": 200,
+                              "header": [],
+                              "cookie": [],
+                              "_postman_previewlanguage": "text"
+                            }
+                          ],
+                          "event": [],
+                          "protocolProfileBehavior": {
+                            "disableBodyPruning": true
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "transactions",
+              "description": "",
+              "item": [
+                {
+                  "name": "{id}",
+                  "description": "",
+                  "item": [
+                    {
+                      "id": "4b62a741-90ee-432b-93aa-7fdb3a4d88a9",
+                      "name": "Reads a single transaction by id, for polling its status",
+                      "request": {
+                        "name": "Reads a single transaction by id, for polling its status",
+                        "description": {},
+                        "url": {
+                          "path": ["api", "v1", "transactions", ":id"],
+                          "host": ["{{baseUrl}}"],
+                          "query": [],
+                          "variable": [
+                            {
+                              "type": "any",
+                              "value": "<uuid>",
+                              "key": "id",
+                              "disabled": false,
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              }
+                            }
+                          ]
+                        },
+                        "method": "GET",
+                        "body": {},
+                        "auth": null
+                      },
+                      "response": [
+                        {
+                          "id": "3c5e82f1-1bbf-472a-93ce-e7d340265620",
+                          "name": "The requested transaction.",
+                          "originalRequest": {
+                            "url": {
+                              "path": ["api", "v1", "transactions", ":id"],
+                              "host": ["{{baseUrl}}"],
+                              "query": [],
+                              "variable": [
+                                {
+                                  "disabled": false,
+                                  "description": {
+                                    "content": "(Required) ",
+                                    "type": "text/plain"
+                                  },
+                                  "type": "any",
+                                  "value": "<uuid>",
+                                  "key": "id"
+                                }
+                              ]
+                            },
+                            "method": "GET",
+                            "body": {}
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "header": [],
+                          "cookie": [],
+                          "_postman_previewlanguage": "text"
+                        }
+                      ],
+                      "event": [],
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "/"
+    }
+  ],
+  "info": {
+    "_postman_id": "1c063ff8-0cbb-4429-a231-9fe471b05f6c",
+    "name": "Payments checkout API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "Card checkout onboarding: catalog, transactions, customers and deliveries.",
+      "type": "text/plain"
+    }
+  }
+}

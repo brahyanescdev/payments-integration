@@ -256,6 +256,7 @@ describe('CheckoutModal', () => {
             breakdown: BREAKDOWN,
             card: { brand: 'visa', lastFour: '4242' },
             failureReason: null,
+            gatewayMode: 'sandbox',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
@@ -268,6 +269,9 @@ describe('CheckoutModal', () => {
       await user.click(screen.getByTestId(TEST_IDS.summaryBackdrop.payButton));
 
       await waitFor(() => expect(screen.getByText(t.result.approvedTitle)).toBeInTheDocument());
+      expect(screen.getByTestId(TEST_IDS.resultPage.gatewayMode)).toHaveTextContent(
+        t.result.gatewayModeSandbox,
+      );
 
       expect(receivedBody).toEqual({
         cardToken: 'tok_fake_4242_abc',
@@ -339,6 +343,38 @@ describe('CheckoutModal', () => {
       expect(screen.getByText('TX-tx-1')).toBeInTheDocument();
     });
 
+    it('labels a fake-driver charge as a test mode, not the real sandbox', () => {
+      renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: {
+          checkout: {
+            ...RESULT_STATE.checkout,
+            transactionStatus: 'APPROVED',
+            gatewayMode: 'fake',
+          },
+        },
+      });
+
+      expect(screen.getByTestId(TEST_IDS.resultPage.gatewayMode)).toHaveTextContent(
+        t.result.gatewayModeFake,
+      );
+    });
+
+    it('labels a real-driver charge as the sandbox, distinctly from the fake mode', () => {
+      renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: {
+          checkout: {
+            ...RESULT_STATE.checkout,
+            transactionStatus: 'APPROVED',
+            gatewayMode: 'sandbox',
+          },
+        },
+      });
+
+      expect(screen.getByTestId(TEST_IDS.resultPage.gatewayMode)).toHaveTextContent(
+        t.result.gatewayModeSandbox,
+      );
+    });
+
     it('shows the decline reason when the gateway reports one', () => {
       renderWithProviders(<CheckoutModalHost />, {
         preloadedState: {
@@ -390,6 +426,7 @@ describe('CheckoutModal', () => {
         breakdown: BREAKDOWN,
         card: null,
         failureReason: status === 'DECLINED' ? 'insufficient_funds' : null,
+        gatewayMode: 'sandbox',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -415,6 +452,9 @@ describe('CheckoutModal', () => {
           timeout: 3000,
         });
         expect(callCount).toBeGreaterThanOrEqual(3);
+        expect(screen.getByTestId(TEST_IDS.resultPage.gatewayMode)).toHaveTextContent(
+          t.result.gatewayModeSandbox,
+        );
       });
 
       it('falls back to a timeout message when the charge never resolves in time', async () => {

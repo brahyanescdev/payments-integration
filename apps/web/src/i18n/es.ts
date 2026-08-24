@@ -70,6 +70,8 @@ export const t = {
     pendingTitle: 'Procesando tu pago',
     pendingBody: 'Te avisaremos en cuanto se confirme.',
     timeoutBody: 'Sigue en proceso. Vuelve más tarde para ver el resultado final.',
+    gatewayModeFake: 'Modo de prueba (pasarela simulada)',
+    gatewayModeSandbox: 'Sandbox real de la pasarela',
     backToProduct: 'Volver al producto',
   },
 } as const;

@@ -34,6 +34,7 @@ export const TEST_IDS = {
   resultPage: {
     root: 'result-page',
     status: 'result-status',
+    gatewayMode: 'result-gateway-mode',
     backToProduct: 'result-back-to-product',
   },
 } as const;

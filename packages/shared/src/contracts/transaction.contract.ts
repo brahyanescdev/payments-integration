@@ -18,11 +18,19 @@ export const FINAL_TRANSACTION_STATUSES = ['APPROVED', 'DECLINED', 'VOIDED', 'ER
 export const isFinalStatus = (status: TransactionStatusDto): boolean =>
   (FINAL_TRANSACTION_STATUSES as readonly string[]).includes(status);
 
+/** Which payment gateway adapter actually processed this charge. */
+export const gatewayModeSchema = z.enum(['fake', 'sandbox']);
+
+export type GatewayModeDto = z.infer<typeof gatewayModeSchema>;
+
 /**
  * Public projection of a transaction, safe to poll from the browser.
  *
  * Carries no card token, no gateway credential and no customer identification —
- * only what the result screen needs to render.
+ * only what the result screen needs to render. `gatewayMode` is the one
+ * operational exception: it names no secret, and it is what lets anyone
+ * verifying the integration tell a `fake`-driver charge apart from one that
+ * actually reached the sandbox.
  */
 export const transactionSchema = z.object({
   id: uuidSchema,
@@ -36,6 +44,7 @@ export const transactionSchema = z.object({
     })
     .nullable(),
   failureReason: z.string().nullable(),
+  gatewayMode: gatewayModeSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

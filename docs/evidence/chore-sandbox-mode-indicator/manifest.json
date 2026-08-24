@@ -1,0 +1,154 @@
+[
+  {
+    "order": 1,
+    "label": "Modal de tarjeta con marca detectada",
+    "file": "01-mobile-modal-de-tarjeta-con-marca-detectada.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "detecta la marca VISA mientras se escribe el número"
+  },
+  {
+    "order": 2,
+    "label": "Resumen tras abrir el checkout",
+    "file": "02-mobile-resumen-tras-abrir-el-checkout.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "abre el checkout y muestra el resumen de precio, sin recargar la página"
+  },
+  {
+    "order": 3,
+    "label": "Resumen con desglose de precio",
+    "file": "03-mobile-resumen-con-desglose-de-precio.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "muestra el desglose de precio antes de pagar"
+  },
+  {
+    "order": 4,
+    "label": "Pago aprobado",
+    "file": "04-mobile-pago-aprobado.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "aprueba el pago con una tarjeta terminada en 4242"
+  },
+  {
+    "order": 5,
+    "label": "Pago rechazado",
+    "file": "05-mobile-pago-rechazado.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "rechaza el pago con una tarjeta terminada en 1111"
+  },
+  {
+    "order": 6,
+    "label": "Error del gateway",
+    "file": "06-mobile-error-del-gateway.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "reporta un error del gateway con cualquier otra tarjeta"
+  },
+  {
+    "order": 7,
+    "label": "Catalogo de productos",
+    "file": "07-mobile-catalogo-de-productos.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "muestra el catálogo con precio, stock e imagen"
+  },
+  {
+    "order": 8,
+    "label": "Shell de la aplicacion",
+    "file": "08-mobile-shell-de-la-aplicacion.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "the SPA boots and renders its shell"
+  },
+  {
+    "order": 9,
+    "label": "Stock actualizado tras el pago",
+    "file": "09-mobile-stock-actualizado-tras-el-pago.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "vuelve al catálogo con el stock ya actualizado tras un pago aprobado"
+  },
+  {
+    "order": 10,
+    "label": "Swagger UI con la API en linea",
+    "file": "01-desktop-swagger-ui-con-la-api-en-linea.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "serves the OpenAPI explorer"
+  },
+  {
+    "order": 11,
+    "label": "Modal de tarjeta con marca detectada",
+    "file": "02-desktop-modal-de-tarjeta-con-marca-detectada.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "detecta la marca VISA mientras se escribe el número"
+  },
+  {
+    "order": 12,
+    "label": "Resumen tras abrir el checkout",
+    "file": "03-desktop-resumen-tras-abrir-el-checkout.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "abre el checkout y muestra el resumen de precio, sin recargar la página"
+  },
+  {
+    "order": 13,
+    "label": "Resumen con desglose de precio",
+    "file": "01-desktop-resumen-con-desglose-de-precio.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "muestra el desglose de precio antes de pagar"
+  },
+  {
+    "order": 14,
+    "label": "Pago aprobado",
+    "file": "02-desktop-pago-aprobado.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "aprueba el pago con una tarjeta terminada en 4242"
+  },
+  {
+    "order": 15,
+    "label": "Pago rechazado",
+    "file": "03-desktop-pago-rechazado.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "rechaza el pago con una tarjeta terminada en 1111"
+  },
+  {
+    "order": 16,
+    "label": "Error del gateway",
+    "file": "04-desktop-error-del-gateway.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "reporta un error del gateway con cualquier otra tarjeta"
+  },
+  {
+    "order": 17,
+    "label": "Catalogo de productos",
+    "file": "05-desktop-catalogo-de-productos.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "muestra el catálogo con precio, stock e imagen"
+  },
+  {
+    "order": 18,
+    "label": "Shell de la aplicacion",
+    "file": "06-desktop-shell-de-la-aplicacion.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "the SPA boots and renders its shell"
+  },
+  {
+    "order": 19,
+    "label": "Stock actualizado tras el pago",
+    "file": "07-desktop-stock-actualizado-tras-el-pago.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "vuelve al catálogo con el stock ya actualizado tras un pago aprobado"
+  }
+]

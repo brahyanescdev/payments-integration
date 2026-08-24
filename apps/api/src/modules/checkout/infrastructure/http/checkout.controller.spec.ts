@@ -302,6 +302,7 @@ describe('CheckoutController', () => {
       expect(response.body).toMatchObject({
         status: 'APPROVED',
         card: { brand: 'visa', lastFour: '4242' },
+        gatewayMode: 'fake',
       });
     });
 
