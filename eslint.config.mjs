@@ -55,10 +55,10 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/coverage/**',
-      '**/cdk.out/**',
       '**/playwright-report/**',
       '**/test-results/**',
       'docs/evidence/**',
+      'infra/.venv/**',
     ],
   },
 

@@ -11,6 +11,7 @@ import { z } from 'zod';
 export interface MikroOrmSettings {
   readonly databaseUrl: string;
   readonly debug: boolean;
+  readonly requireSsl: boolean;
 }
 
 const ormEnvSchema = z.object({
@@ -38,5 +39,8 @@ export function loadOrmSettings(source: Record<string, unknown>): MikroOrmSettin
   return {
     databaseUrl: parsed.data.DATABASE_URL,
     debug: parsed.data.NODE_ENV === 'development',
+    // Local/CI Postgres never speaks TLS; a production deploy's managed
+    // database (RDS) always requires it.
+    requireSsl: parsed.data.NODE_ENV === 'production',
   };
 }

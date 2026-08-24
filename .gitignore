@@ -18,9 +18,10 @@ test-results/
 .env.local
 .env.*.local
 
-# infrastructure
-cdk.out/
-.cdk.staging/
+# infrastructure — state.json holds the RDS password, *.pem the SSH key
+infra/.venv/
+infra/state.json
+infra/*.pem
 
 # editors & OS
 .DS_Store
