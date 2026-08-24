@@ -32,6 +32,7 @@ import { MikroUnitOfWork } from './mikro-unit-of-work';
         buildMikroOrmConfig({
           databaseUrl: config.database.url,
           debug: config.nodeEnv === 'development',
+          requireSsl: config.nodeEnv === 'production',
         }),
     }),
   ],

@@ -42,6 +42,14 @@ export function buildMikroOrmConfig(settings: MikroOrmSettings) {
     // without it, and the failure only appears at Nest bootstrap.
     driver: PostgreSqlDriver,
     clientUrl: settings.databaseUrl,
+    // RDS rejects unencrypted connections by default (`rds.force_ssl`); the pg
+    // driver only turns TLS on when told to explicitly — `?sslmode=` in the URL
+    // is silently dropped by knex's connection-string parsing, so it has to be
+    // set here instead. `rejectUnauthorized: false` because the RDS CA isn't in
+    // Node's default trust store and the traffic never leaves the VPC anyway.
+    driverOptions: settings.requireSsl
+      ? { connection: { ssl: { rejectUnauthorized: false } } }
+      : {},
     entities: ENTITIES,
     // Domain code speaks camelCase, PostgreSQL speaks snake_case; the strategy
     // translates so neither has to compromise.
