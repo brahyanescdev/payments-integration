@@ -1,0 +1,18 @@
+[
+  {
+    "order": 1,
+    "label": "Tipo de documento y país en filas propias",
+    "file": "01-mobile-tipo-de-documento-y-pais-en-filas-propias.png",
+    "project": "mobile",
+    "viewport": "375x667",
+    "title": "\"Tipo de documento\" y \"País\" quedan en su propia fila, alineados con su input"
+  },
+  {
+    "order": 2,
+    "label": "Tipo de documento y país en filas propias",
+    "file": "01-desktop-tipo-de-documento-y-pais-en-filas-propias.png",
+    "project": "desktop",
+    "viewport": "1280x800",
+    "title": "\"Tipo de documento\" y \"País\" quedan en su propia fila, alineados con su input"
+  }
+]

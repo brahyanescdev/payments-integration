@@ -74,4 +74,27 @@ test.describe('Formulario de tarjeta y entrega', () => {
 
     await expect(page.getByTestId(TEST_IDS.checkoutModal.root)).toBeVisible();
   });
+
+  test('rechaza letras en el documento de identidad y en el código postal', async ({ page }) => {
+    await openCheckoutModal(page, PRODUCT_NAME);
+    await fillValidForm(page);
+    await page.getByLabel('Documento de identidad').fill('ABC123');
+    await page.getByLabel('Código postal').fill('AB123');
+
+    await page.getByTestId(TEST_IDS.checkoutModal.submit).click();
+
+    await expect(page.getByText(/solo números/i).first()).toBeVisible();
+    await expect(page.getByTestId(TEST_IDS.checkoutModal.root)).toBeVisible();
+  });
+
+  test('"Tipo de documento" y "País" quedan en su propia fila, alineados con su input', async ({
+    page,
+  }, testInfo) => {
+    await openCheckoutModal(page, PRODUCT_NAME);
+    await fillValidForm(page);
+
+    // `captureEvidence` shoots the full scrollable page, so one capture already
+    // shows both fixed fields — no need to scroll to each separately.
+    await captureEvidence(page, testInfo, 'Tipo de documento y país en filas propias');
+  });
 });
