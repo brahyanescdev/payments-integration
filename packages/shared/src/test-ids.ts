@@ -35,6 +35,8 @@ export const TEST_IDS = {
     root: 'result-page',
     status: 'result-status',
     gatewayMode: 'result-gateway-mode',
+    paidAmount: 'result-paid-amount',
+    card: 'result-card',
     backToProduct: 'result-back-to-product',
   },
 } as const;

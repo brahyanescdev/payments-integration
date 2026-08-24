@@ -375,6 +375,33 @@ describe('CheckoutModal', () => {
       );
     });
 
+    it('shows the total paid and the card that paid, once both are known', () => {
+      renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: {
+          checkout: {
+            ...RESULT_STATE.checkout,
+            transactionStatus: 'APPROVED',
+            breakdown: BREAKDOWN,
+            cardMeta: { brand: 'visa', lastFour: '4242' },
+          },
+        },
+      });
+
+      // `formatMoney` inserts a non-breaking space after the currency symbol, which
+      // `toHaveTextContent` normalises on the DOM side but not on a literal string
+      // passed in — matching only the digits sidesteps that mismatch entirely.
+      expect(screen.getByTestId(TEST_IDS.resultPage.paidAmount)).toHaveTextContent('100.000');
+      expect(screen.getByTestId(TEST_IDS.resultPage.card)).toHaveTextContent('4242');
+    });
+
+    it('omits the payment summary when the result step is reached without a breakdown', () => {
+      renderWithProviders(<CheckoutModalHost />, {
+        preloadedState: { checkout: { ...RESULT_STATE.checkout, transactionStatus: 'APPROVED' } },
+      });
+
+      expect(screen.queryByTestId(TEST_IDS.resultPage.paidAmount)).not.toBeInTheDocument();
+    });
+
     it('shows the decline reason when the gateway reports one', () => {
       renderWithProviders(<CheckoutModalHost />, {
         preloadedState: {

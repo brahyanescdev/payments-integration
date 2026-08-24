@@ -36,6 +36,7 @@ import {
   checkoutFailed,
   checkoutSucceeded,
   paymentSucceeded,
+  type CardMeta,
 } from './checkoutSlice';
 import { resolveTokenizationUrl, tokenizeCard } from './tokenize-card';
 
@@ -98,8 +99,36 @@ function GatewayModeBadge({ gatewayMode }: { gatewayMode: GatewayModeDto }) {
   );
 }
 
+/** Amount charged and the card that paid — split out of {@link ResultPanel} to keep it short. */
+function PaymentSummary({
+  breakdown,
+  cardMeta,
+}: {
+  breakdown: AmountBreakdownDto;
+  cardMeta: CardMeta;
+}) {
+  return (
+    <div className="mt-3 flex flex-col gap-1 rounded-md border border-neutral-200 p-3 text-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-neutral-600">{t.result.paidAmountLabel}</span>
+        <span data-testid={TEST_IDS.resultPage.paidAmount} className="font-semibold">
+          {formatMoney(breakdown.totalInCents, breakdown.currency)}
+        </span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-neutral-600">{t.result.cardLabel}</span>
+        <span data-testid={TEST_IDS.resultPage.card} className="flex items-center gap-1.5">
+          <CardBrandBadge brand={cardMeta.brand} />
+          •••• {cardMeta.lastFour}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /**
- * Screens 4–5: the final outcome of the charge.
+ * Drives screens 4–5's polling and copy — split out of {@link ResultPanel} so
+ * the component stays a render function.
  *
  * A charge the gateway left `PENDING` is polled here — via `GET /transactions/:id`
  * at the interval `webConfig` names — until either a terminal status arrives (the
@@ -108,12 +137,18 @@ function GatewayModeBadge({ gatewayMode }: { gatewayMode: GatewayModeDto }) {
  * actually produces this path (every sandbox test card resolves synchronously),
  * so this only ever engages against the real gateway.
  */
-function ResultPanel() {
+function useResultPanelState() {
   const dispatch = useDispatch();
   const config = useConfig();
-  const { transactionId, reference, transactionStatus, failureReason, gatewayMode } = useSelector(
-    (state: RootState) => state.checkout,
-  );
+  const {
+    transactionId,
+    reference,
+    transactionStatus,
+    failureReason,
+    gatewayMode,
+    breakdown,
+    cardMeta,
+  } = useSelector((state: RootState) => state.checkout);
   const { useGetTransactionQuery } = useCheckoutApi();
   const catalogApi = useCatalogApi();
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
@@ -158,6 +193,14 @@ function ResultPanel() {
     dispatch(checkoutClosed());
   };
 
+  return { copy, body, gatewayMode, breakdown, cardMeta, failureReason, reference, onClose };
+}
+
+/** Screens 4–5: the final outcome of the charge. */
+function ResultPanel() {
+  const { copy, body, gatewayMode, breakdown, cardMeta, failureReason, reference, onClose } =
+    useResultPanelState();
+
   return (
     <Modal title={copy.title} onClose={onClose}>
       <div data-testid={TEST_IDS.resultPage.root}>
@@ -165,6 +208,9 @@ function ResultPanel() {
           {body}
         </p>
         {gatewayMode !== null && <GatewayModeBadge gatewayMode={gatewayMode} />}
+        {breakdown !== null && cardMeta !== null && (
+          <PaymentSummary breakdown={breakdown} cardMeta={cardMeta} />
+        )}
         {failureReason !== null && <p className="mt-2 text-xs text-neutral-500">{failureReason}</p>}
         {reference !== null && <p className="mt-2 text-xs text-neutral-500">{reference}</p>}
         <button
