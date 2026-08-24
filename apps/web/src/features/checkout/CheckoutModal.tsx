@@ -4,6 +4,7 @@ import {
   type AcceptanceTokensDto,
   type AmountBreakdownDto,
   type CheckoutCreatedDto,
+  type GatewayModeDto,
   type TransactionStatusDto,
 } from '@payments/shared';
 import { skipToken } from '@reduxjs/toolkit/query/react';
@@ -81,6 +82,22 @@ const RESULT_COPY: Record<TransactionStatusDto, { title: string; body: string }>
   PENDING: { title: t.result.pendingTitle, body: t.result.pendingBody },
 };
 
+/** Names which gateway adapter actually processed the charge — split out of {@link ResultPanel} to keep it short. */
+function GatewayModeBadge({ gatewayMode }: { gatewayMode: GatewayModeDto }) {
+  const isSandbox = gatewayMode === 'sandbox';
+
+  return (
+    <span
+      data-testid={TEST_IDS.resultPage.gatewayMode}
+      className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+        isSandbox ? 'bg-amber-100 text-amber-800' : 'bg-neutral-100 text-neutral-600'
+      }`}
+    >
+      {isSandbox ? t.result.gatewayModeSandbox : t.result.gatewayModeFake}
+    </span>
+  );
+}
+
 /**
  * Screens 4–5: the final outcome of the charge.
  *
@@ -94,7 +111,7 @@ const RESULT_COPY: Record<TransactionStatusDto, { title: string; body: string }>
 function ResultPanel() {
   const dispatch = useDispatch();
   const config = useConfig();
-  const { transactionId, reference, transactionStatus, failureReason } = useSelector(
+  const { transactionId, reference, transactionStatus, failureReason, gatewayMode } = useSelector(
     (state: RootState) => state.checkout,
   );
   const { useGetTransactionQuery } = useCheckoutApi();
@@ -109,7 +126,13 @@ function ResultPanel() {
 
   useEffect(() => {
     if (polled !== undefined && polled.status !== 'PENDING') {
-      dispatch(paymentSucceeded({ status: polled.status, failureReason: polled.failureReason }));
+      dispatch(
+        paymentSucceeded({
+          status: polled.status,
+          failureReason: polled.failureReason,
+          gatewayMode: polled.gatewayMode,
+        }),
+      );
     }
   }, [polled, dispatch]);
 
@@ -141,6 +164,7 @@ function ResultPanel() {
         <p data-testid={TEST_IDS.resultPage.status} className="text-sm text-neutral-700">
           {body}
         </p>
+        {gatewayMode !== null && <GatewayModeBadge gatewayMode={gatewayMode} />}
         {failureReason !== null && <p className="mt-2 text-xs text-neutral-500">{failureReason}</p>}
         {reference !== null && <p className="mt-2 text-xs text-neutral-500">{reference}</p>}
         <button
@@ -262,7 +286,13 @@ function SummaryBackdrop() {
         },
       }).unwrap();
 
-      dispatch(paymentSucceeded({ status: result.status, failureReason: result.failureReason }));
+      dispatch(
+        paymentSucceeded({
+          status: result.status,
+          failureReason: result.failureReason,
+          gatewayMode: result.gatewayMode,
+        }),
+      );
     } catch {
       dispatch(checkoutFailed(t.summary.genericError));
     }

@@ -40,12 +40,23 @@ describe('transactionSchema', () => {
     },
     card: { brand: 'VISA', lastFour: '4242' },
     failureReason: null,
+    gatewayMode: 'sandbox',
     createdAt: '2026-08-22T13:00:00.000Z',
     updatedAt: '2026-08-22T13:05:00.000Z',
   };
 
   it('accepts a settled transaction', () => {
     expect(transactionSchema.parse(transaction).status).toBe('APPROVED');
+  });
+
+  it.each(['fake', 'sandbox'] as const)('accepts gatewayMode "%s"', (gatewayMode) => {
+    expect(transactionSchema.parse({ ...transaction, gatewayMode }).gatewayMode).toBe(gatewayMode);
+  });
+
+  it('rejects a gatewayMode the API never reports, so a typo cannot silently pass through', () => {
+    expect(transactionSchema.safeParse({ ...transaction, gatewayMode: 'http' }).success).toBe(
+      false,
+    );
   });
 
   it('allows a transaction with no card yet', () => {

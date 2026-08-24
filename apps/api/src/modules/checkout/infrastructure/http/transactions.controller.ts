@@ -2,6 +2,7 @@ import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import type { TransactionDto } from '@payments/shared';
 
+import { APP_CONFIG, type AppConfig } from '../../../../config/app.config';
 import { unwrapOrThrow } from '../../../../shared/http/domain-error.http';
 import {
   GET_TRANSACTION_USE_CASE,
@@ -15,6 +16,7 @@ import { toTransactionDto } from './transaction.presenter';
 export class TransactionsController {
   constructor(
     @Inject(GET_TRANSACTION_USE_CASE) private readonly getTransaction: GetTransactionUseCase,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Get(':id')
@@ -24,6 +26,6 @@ export class TransactionsController {
   async detail(@Param('id', ParseUUIDPipe) id: string): Promise<TransactionDto> {
     const result = await this.getTransaction.execute(id);
 
-    return toTransactionDto(unwrapOrThrow(result));
+    return toTransactionDto(unwrapOrThrow(result), this.config.psp.driver);
   }
 }

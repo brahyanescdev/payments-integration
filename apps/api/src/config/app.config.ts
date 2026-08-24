@@ -1,5 +1,8 @@
 import { envSchema, type Env } from './env.schema';
 
+/** Which payment gateway adapter is wired up: the in-memory double, or the real sandbox over HTTP. */
+export type PspDriver = Env['PAYMENT_GATEWAY_DRIVER'];
+
 /**
  * Application configuration, grouped by the concern that consumes it.
  *
@@ -18,7 +21,7 @@ export interface AppConfig {
     readonly url: string;
   };
   readonly psp: {
-    readonly driver: Env['PAYMENT_GATEWAY_DRIVER'];
+    readonly driver: PspDriver;
     readonly baseUrl: string;
     readonly publicKey: string;
     readonly privateKey: string;

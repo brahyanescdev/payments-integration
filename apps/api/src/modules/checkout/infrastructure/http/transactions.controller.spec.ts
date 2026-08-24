@@ -3,6 +3,8 @@ import { Test } from '@nestjs/testing';
 import { okAsync } from 'neverthrow';
 import request from 'supertest';
 
+import { APP_CONFIG, loadAppConfig } from '../../../../config/app.config';
+import { makeEnv } from '../../../../config/env.fixture';
 import {
   UNIT_OF_WORK,
   type RepositoryRegistry,
@@ -36,8 +38,9 @@ class TestTransactionsModule {
           provide: GET_TRANSACTION_USE_CASE,
           useFactory: () => new GetTransactionUseCase(unitOfWork as never),
         },
+        { provide: APP_CONFIG, useValue: loadAppConfig(makeEnv()) },
       ],
-      exports: [UNIT_OF_WORK, GET_TRANSACTION_USE_CASE],
+      exports: [UNIT_OF_WORK, GET_TRANSACTION_USE_CASE, APP_CONFIG],
     };
   }
 }
@@ -70,8 +73,42 @@ describe('TransactionsController', () => {
       .get(`/transactions/${TRANSACTION_ID}`)
       .expect(200);
 
-    expect(response.body).toMatchObject({ id: TRANSACTION_ID, status: 'PENDING' });
+    expect(response.body).toMatchObject({
+      id: TRANSACTION_ID,
+      status: 'PENDING',
+      gatewayMode: 'fake',
+    });
     expect(response.body).not.toHaveProperty('customerId');
+  });
+
+  it('reports gatewayMode "sandbox" when the real driver is configured, never the internal "http" name', async () => {
+    const transaction = makeTransaction({ id: TRANSACTION_ID });
+    const moduleRef = await Test.createTestingModule({
+      imports: [TestTransactionsModule.register(new Map([[TRANSACTION_ID, transaction]]))],
+      controllers: [TransactionsController],
+    })
+      .overrideProvider(APP_CONFIG)
+      .useValue(
+        loadAppConfig(
+          makeEnv({
+            PAYMENT_GATEWAY_DRIVER: 'http',
+            PSP_PUBLIC_KEY: 'pub',
+            PSP_PRIVATE_KEY: 'prv',
+            PSP_INTEGRITY_SECRET: 'int',
+            PSP_EVENTS_SECRET: 'evt',
+          }),
+        ),
+      )
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    const response = await request(app.getHttpServer())
+      .get(`/transactions/${TRANSACTION_ID}`)
+      .expect(200);
+
+    expect(response.body.gatewayMode).toBe('sandbox');
   });
 
   it('answers 404 for a transaction that does not exist', async () => {

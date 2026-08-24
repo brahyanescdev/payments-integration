@@ -100,22 +100,28 @@ describe('checkoutSlice', () => {
   it('a resolved payment moves to the result step with the gateway status', () => {
     const state = checkoutReducer(
       succeeded(),
-      paymentSucceeded({ status: 'APPROVED', failureReason: null }),
+      paymentSucceeded({ status: 'APPROVED', failureReason: null, gatewayMode: 'fake' }),
     );
 
     expect(state.step).toBe('result');
     expect(state.transactionStatus).toBe('APPROVED');
     expect(state.failureReason).toBeNull();
+    expect(state.gatewayMode).toBe('fake');
   });
 
   it('a declined payment records its failure reason', () => {
     const state = checkoutReducer(
       succeeded(),
-      paymentSucceeded({ status: 'DECLINED', failureReason: 'insufficient_funds' }),
+      paymentSucceeded({
+        status: 'DECLINED',
+        failureReason: 'insufficient_funds',
+        gatewayMode: 'sandbox',
+      }),
     );
 
     expect(state.transactionStatus).toBe('DECLINED');
     expect(state.failureReason).toBe('insufficient_funds');
+    expect(state.gatewayMode).toBe('sandbox');
   });
 
   it('closing resets everything back to idle', () => {
