@@ -239,13 +239,10 @@ function BreakdownList({ breakdown }: { breakdown: AmountBreakdownDto }) {
 }
 
 /**
- * Screen 3: the price breakdown and the button that actually charges the card.
- *
- * Everything the charge needs — the card token and the gateway's acceptance
- * tokens — was already produced while the buyer was still on the form; this
- * screen only has to send it on to `POST /checkout/:id/pay`.
+ * Drives `POST /checkout/:id/pay` — split out of {@link SummaryBackdrop} so the
+ * component stays a render function and this stays a state machine.
  */
-function SummaryBackdrop() {
+function useSummaryPayment() {
   const dispatch = useDispatch();
   const {
     transactionId,
@@ -260,9 +257,8 @@ function SummaryBackdrop() {
   const { usePayCheckoutMutation } = useCheckoutApi();
   const [payCheckout, { isLoading }] = usePayCheckoutMutation();
 
-  if (breakdown === null || transactionId === null) return null;
-
   const canPay =
+    transactionId !== null &&
     cardToken !== null &&
     acceptanceToken !== null &&
     acceptPersonalAuthToken !== null &&
@@ -297,6 +293,22 @@ function SummaryBackdrop() {
       dispatch(checkoutFailed(t.summary.genericError));
     }
   };
+
+  return { breakdown, errorMessage, canPay, isLoading, onPay };
+}
+
+/**
+ * Screen 3: the price breakdown and the button that actually charges the card.
+ *
+ * Everything the charge needs — the card token and the gateway's acceptance
+ * tokens — was already produced while the buyer was still on the form; this
+ * screen only has to send it on to `POST /checkout/:id/pay`.
+ */
+function SummaryBackdrop() {
+  const dispatch = useDispatch();
+  const { breakdown, errorMessage, canPay, isLoading, onPay } = useSummaryPayment();
+
+  if (breakdown === null) return null;
 
   return (
     <Modal title={t.summary.title} onClose={() => dispatch(checkoutClosed())}>
