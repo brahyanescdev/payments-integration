@@ -5,6 +5,7 @@ import type {
   AcceptanceTokens,
   ChargeCardInput,
   ChargeResult,
+  GatewayStatus,
   PaymentGatewayPort,
 } from '../../domain/ports/payment-gateway.port';
 
@@ -69,5 +70,13 @@ export class FakePaymentGatewayAdapter implements PaymentGatewayPort {
     }
 
     return okAsync({ gatewayTransactionId, status: 'ERROR', failureReason: 'GENERIC_ERROR' });
+  }
+
+  /** Unreachable in practice: every fake charge above resolves synchronously, so
+   * `GetTransactionUseCase` never finds one still `PENDING` to poll. */
+  getTransactionStatus(gatewayTransactionId: string): ResultAsync<GatewayStatus, DomainError> {
+    return errAsync(
+      gatewayUnavailable(`The fake gateway has no status to poll for ${gatewayTransactionId}.`),
+    );
   }
 }

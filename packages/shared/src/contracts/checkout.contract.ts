@@ -12,7 +12,10 @@ export const customerInputSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{7,15}$/, 'Debe tener entre 7 y 15 dígitos'),
-  legalId: z.string().trim().min(5).max(32),
+  legalId: z
+    .string()
+    .trim()
+    .regex(/^\d{5,32}$/, 'Solo números, entre 5 y 32 dígitos.'),
   legalIdType: legalIdTypeSchema,
 });
 
@@ -27,7 +30,10 @@ export const deliveryInputSchema = z.object({
   city: z.string().trim().min(2).max(120),
   region: z.string().trim().min(2).max(120),
   country: z.string().trim().length(2).toUpperCase(),
-  postalCode: z.string().trim().min(3).max(20),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(/^\d{3,20}$/, 'Solo números, entre 3 y 20 dígitos.'),
 });
 
 /**

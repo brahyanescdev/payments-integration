@@ -41,12 +41,26 @@ export interface ChargeResult {
   readonly failureReason: string | null;
 }
 
+/** What the gateway currently reports for a charge already submitted to it. */
+export interface GatewayStatus {
+  readonly status: TransactionStatus;
+  readonly failureReason: string | null;
+}
+
 /**
  * Outbound port to the payment service provider (PSP).
  */
 export interface PaymentGatewayPort {
   getAcceptanceTokens(): ResultAsync<AcceptanceTokens, DomainError>;
   chargeCard(input: ChargeCardInput): ResultAsync<ChargeResult, DomainError>;
+  /**
+   * Asks the gateway directly for a charge's current status — the fallback path
+   * for when its webhook cannot reach us (a shared sandbox account whose event
+   * URL we don't control, or simply a webhook delivery that never arrived).
+   * `GetTransactionUseCase` calls this only when a transaction is still
+   * `PENDING`, exactly the condition the webhook path also resolves.
+   */
+  getTransactionStatus(gatewayTransactionId: string): ResultAsync<GatewayStatus, DomainError>;
 }
 
 /** Injection token for {@link PaymentGatewayPort}. */

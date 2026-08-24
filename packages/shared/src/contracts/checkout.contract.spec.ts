@@ -63,6 +63,15 @@ describe('createCheckoutSchema', () => {
       false,
     );
   });
+
+  it.each(['ABC123', '1020-3040', '10203 4050'])(
+    'rejects the legal id "%s": digits only',
+    (legalId) => {
+      const request = { ...validCheckout, customer: { ...validCustomer, legalId } };
+
+      expect(createCheckoutSchema.safeParse(request).success).toBe(false);
+    },
+  );
 });
 
 describe('deliveryInputSchema', () => {
@@ -85,6 +94,13 @@ describe('deliveryInputSchema', () => {
   it.each(['C', 'COL'])('rejects the country code "%s"', (country) => {
     expect(deliveryInputSchema.safeParse({ ...validDelivery, country }).success).toBe(false);
   });
+
+  it.each(['abc', '110-111', '110 111'])(
+    'rejects the postal code "%s": digits only',
+    (postalCode) => {
+      expect(deliveryInputSchema.safeParse({ ...validDelivery, postalCode }).success).toBe(false);
+    },
+  );
 });
 
 describe('payCheckoutSchema', () => {

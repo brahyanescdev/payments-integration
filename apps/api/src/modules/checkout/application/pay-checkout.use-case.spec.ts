@@ -79,6 +79,7 @@ function makeUseCase(repositories: RepositoryRegistry, gateway: PaymentGatewayPo
 const gatewayThatReturns = (result: ChargeResult): PaymentGatewayPort => ({
   getAcceptanceTokens: () => errAsync(gatewayUnavailable('not used in this test')),
   chargeCard: () => okAsync(result),
+  getTransactionStatus: () => errAsync(gatewayUnavailable('not used in this test')),
 });
 
 describe('PayCheckoutUseCase', () => {

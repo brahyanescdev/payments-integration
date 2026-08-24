@@ -7,6 +7,7 @@ import type {
   AcceptanceTokens,
   ChargeCardInput,
   ChargeResult,
+  GatewayStatus,
   PaymentGatewayPort,
 } from '../../domain/ports/payment-gateway.port';
 import { computeIntegritySignature } from './integrity-signature';
@@ -102,6 +103,15 @@ export class HttpPaymentGatewayAdapter implements PaymentGatewayPort {
       gatewayTransactionId: created.data.id,
       status: this.toTransactionStatus(created.data.status),
       failureReason: created.data.status_message,
+    }));
+  }
+
+  getTransactionStatus(gatewayTransactionId: string): ResultAsync<GatewayStatus, DomainError> {
+    return this.request<CreateTransactionResponse>(`/transactions/${gatewayTransactionId}`, {
+      method: 'GET',
+    }).map((found) => ({
+      status: this.toTransactionStatus(found.data.status),
+      failureReason: found.data.status_message,
     }));
   }
 
