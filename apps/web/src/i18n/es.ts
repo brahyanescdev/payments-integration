@@ -72,6 +72,8 @@ export const t = {
     timeoutBody: 'Sigue en proceso. Vuelve más tarde para ver el resultado final.',
     gatewayModeFake: 'Modo de prueba (pasarela simulada)',
     gatewayModeSandbox: 'Sandbox real de la pasarela',
+    paidAmountLabel: 'Total pagado',
+    cardLabel: 'Tarjeta',
     backToProduct: 'Volver al producto',
   },
 } as const;
