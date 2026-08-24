@@ -18,9 +18,17 @@ export function Modal({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Focused once, on mount, not on every render: callers overwhelmingly pass an
+  // inline `onClose`, a fresh function identity every render, and the escape
+  // listener below has to depend on it to always call the latest closure. If
+  // that focus call lived in the same effect, every keystroke in a field
+  // inside this modal would re-run it and yank focus back to the panel — which
+  // is exactly what happened before this was split in two.
   useEffect(() => {
     panelRef.current?.focus();
+  }, []);
 
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
