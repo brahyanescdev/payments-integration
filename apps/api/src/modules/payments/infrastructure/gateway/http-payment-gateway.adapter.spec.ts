@@ -174,4 +174,57 @@ describe('HttpPaymentGatewayAdapter', () => {
       expect(error.kind).toBe('GatewayUnavailable');
     });
   });
+
+  describe('getTransactionStatus', () => {
+    const statusResponse = (status: string, statusMessage: string | null = null) =>
+      new Response(
+        JSON.stringify({ data: { id: 'gw_1', status, status_message: statusMessage } }),
+        {
+          status: 200,
+        },
+      );
+
+    it('requests the transaction by its gateway id', async () => {
+      global.fetch = jest.fn().mockResolvedValue(statusResponse('APPROVED'));
+
+      await new HttpPaymentGatewayAdapter(SETTINGS).getTransactionStatus('gw_1');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://psp.example.test/v1/transactions/gw_1',
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer pub_test_123' }),
+        }),
+      );
+    });
+
+    it('maps a terminal status and its failure reason', async () => {
+      global.fetch = jest.fn().mockResolvedValue(statusResponse('DECLINED', 'INSUFFICIENT_FUNDS'));
+
+      const result = (
+        await new HttpPaymentGatewayAdapter(SETTINGS).getTransactionStatus('gw_1')
+      )._unsafeUnwrap();
+
+      expect(result).toEqual({ status: 'DECLINED', failureReason: 'INSUFFICIENT_FUNDS' });
+    });
+
+    it('maps a still-pending status', async () => {
+      global.fetch = jest.fn().mockResolvedValue(statusResponse('PENDING'));
+
+      const result = (
+        await new HttpPaymentGatewayAdapter(SETTINGS).getTransactionStatus('gw_1')
+      )._unsafeUnwrap();
+
+      expect(result.status).toBe('PENDING');
+    });
+
+    it('maps a non-2xx response to GatewayUnavailable', async () => {
+      global.fetch = jest.fn().mockResolvedValue(new Response('', { status: 404 }));
+
+      const error = (
+        await new HttpPaymentGatewayAdapter(SETTINGS).getTransactionStatus('gw_missing')
+      )._unsafeUnwrapErr();
+
+      expect(error.kind).toBe('GatewayUnavailable');
+    });
+  });
 });

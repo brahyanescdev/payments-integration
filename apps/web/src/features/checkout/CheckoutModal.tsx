@@ -491,17 +491,23 @@ function BuyerFieldset() {
         autoComplete="email"
       />
       <TextField name="customer.fullName" label={t.checkout.fullNameLabel} autoComplete="name" />
-      <div className="flex gap-3">
-        <TextField
-          name="customer.phone"
-          label={t.checkout.phoneLabel}
-          className="flex-1"
-          inputMode="numeric"
-          autoComplete="tel"
-        />
-        <LegalIdTypeField />
-      </div>
-      <TextField name="customer.legalId" label={t.checkout.legalIdLabel} />
+      <TextField
+        name="customer.phone"
+        label={t.checkout.phoneLabel}
+        inputMode="numeric"
+        pattern="[0-9]*"
+        autoComplete="tel"
+      />
+      {/* Its own row, not squeezed next to another field: "Tipo de documento" is
+          long enough to wrap onto two lines in a narrow shared column, which pushed
+          this select down and out of line with whatever sat beside it. */}
+      <LegalIdTypeField />
+      <TextField
+        name="customer.legalId"
+        label={t.checkout.legalIdLabel}
+        inputMode="numeric"
+        pattern="[0-9]*"
+      />
     </fieldset>
   );
 }
@@ -514,11 +520,7 @@ function LegalIdTypeField() {
   } = useFormContext<CheckoutFormValues>();
 
   return (
-    <Field
-      label={t.checkout.legalIdTypeLabel}
-      error={errors.customer?.legalIdType?.message}
-      className="w-28"
-    >
+    <Field label={t.checkout.legalIdTypeLabel} error={errors.customer?.legalIdType?.message}>
       <select
         {...register('customer.legalIdType')}
         className="w-full rounded-md border border-neutral-300 px-2 py-2 text-sm"
@@ -550,6 +552,7 @@ function DeliveryFieldset() {
         name="delivery.phone"
         label={t.checkout.phoneLabel}
         inputMode="numeric"
+        pattern="[0-9]*"
         autoComplete="tel"
       />
       <TextField
@@ -576,21 +579,21 @@ function DeliveryFieldset() {
           autoComplete="address-level1"
         />
       </div>
-      <div className="flex gap-3">
-        <TextField
-          name="delivery.country"
-          label={t.checkout.countryLabel}
-          className="w-24 uppercase"
-          maxLength={2}
-          autoComplete="country"
-        />
-        <TextField
-          name="delivery.postalCode"
-          label={t.checkout.postalCodeLabel}
-          className="flex-1"
-          autoComplete="postal-code"
-        />
-      </div>
+      {/* Own row: "País (código de 2 letras)" wraps in a narrow shared column. */}
+      <TextField
+        name="delivery.country"
+        label={t.checkout.countryLabel}
+        className="uppercase"
+        maxLength={2}
+        autoComplete="country"
+      />
+      <TextField
+        name="delivery.postalCode"
+        label={t.checkout.postalCodeLabel}
+        inputMode="numeric"
+        pattern="[0-9]*"
+        autoComplete="postal-code"
+      />
     </fieldset>
   );
 }

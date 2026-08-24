@@ -88,8 +88,12 @@ const PRICING_POLICY = Symbol('PRICING_POLICY');
     },
     {
       provide: GET_TRANSACTION_USE_CASE,
-      useFactory: (unitOfWork: UnitOfWork) => new GetTransactionUseCase(unitOfWork),
-      inject: [UNIT_OF_WORK],
+      useFactory: (
+        unitOfWork: UnitOfWork,
+        gateway: PaymentGatewayPort,
+        settleTransaction: SettleTransactionUseCase,
+      ) => new GetTransactionUseCase(unitOfWork, gateway, settleTransaction),
+      inject: [UNIT_OF_WORK, PAYMENT_GATEWAY, SETTLE_TRANSACTION_USE_CASE],
     },
     {
       provide: PROCESS_PAYMENT_WEBHOOK_USE_CASE,

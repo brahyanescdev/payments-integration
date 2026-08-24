@@ -72,4 +72,12 @@ describe('FakePaymentGatewayAdapter', () => {
       expect(error.kind).toBe('GatewayUnavailable');
     });
   });
+
+  describe('getTransactionStatus', () => {
+    it('fails with GatewayUnavailable: every fake charge resolves synchronously, so there is never a status to poll', async () => {
+      const error = (await adapter.getTransactionStatus('fake_gw_TX-1'))._unsafeUnwrapErr();
+
+      expect(error.kind).toBe('GatewayUnavailable');
+    });
+  });
 });
